@@ -17,6 +17,7 @@ from scipy.stats import chi2_contingency
 from sqlalchemy.orm import Session
 
 from app.models.database import MolecularDatabase, get_db
+from app.core.fonts import configure_matplotlib_fonts
 
 router = APIRouter(prefix="/api/source-db", tags=["source-database"])
 
@@ -118,17 +119,7 @@ def _fig_to_pdf_base64(fig):
 
 
 def _configure_plot_fonts():
-    plt.rcParams["font.family"] = "sans-serif"
-    plt.rcParams["font.sans-serif"] = [
-        "Times New Roman",
-        "Microsoft YaHei",
-        "SimHei",
-        "Arial Unicode MS",
-        "DejaVu Sans",
-    ]
-    plt.rcParams["axes.unicode_minus"] = False
-    plt.rcParams["pdf.fonttype"] = 3
-    plt.rcParams["ps.fonttype"] = 3
+    configure_matplotlib_fonts("Times New Roman", pdf_fonttype=3)
 
 
 def _heatmap(data, row_labels, title, p_value=None, output_format="png"):

@@ -53,7 +53,13 @@ chmod +x deploy/deploy.sh
 访问：
 
 ```text
-http://<server-ip>
+http://<server-ip>:8080
+```
+
+如果你用宝塔/1Panel/Nginx 做反向代理，建议代理到：
+
+```text
+http://127.0.0.1:8080
 ```
 
 ### 方案 B：非 Docker 部署
@@ -116,6 +122,12 @@ docker compose -f deploy/docker-compose.yml down
 ```bash
 tail -f logs/server.log logs/server.err.log
 ```
+
+## 服务器字体
+
+Docker 镜像会自动安装 Times 兼容字体和 Noto CJK 字体，避免 Linux 服务器生成图表时退回默认字体或中文显示方框。
+
+真正的 Times New Roman 属于微软字体，仓库不会直接携带。若需要服务器输出完全等同 Windows 的 Times New Roman，请将合法授权的 `times.ttf`、`timesbd.ttf`、`timesi.ttf`、`timesbi.ttf` 放入 `backend/app/fonts/` 后重新构建 Docker。没有这些字体时，系统会优先使用 Tinos/Liberation Serif 作为 Times New Roman 的 Linux 替代字体。
 
 ## 目录结构
 

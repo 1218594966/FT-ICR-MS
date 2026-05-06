@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.models.database import get_db, Task
 from app.config import settings
+from app.core.fonts import configure_matplotlib_fonts
 
 router = APIRouter(prefix="/api/export", tags=["export"])
 
@@ -111,10 +112,7 @@ def _get_color_map(custom_colors: str = None):
 
 
 def _set_vector_font(font_size: int, scale: float):
-    matplotlib.rcParams['font.family'] = 'Times New Roman'
-    matplotlib.rcParams['pdf.fonttype'] = 3
-    matplotlib.rcParams['ps.fonttype'] = 3
-    matplotlib.rcParams['svg.fonttype'] = 'none'
+    configure_matplotlib_fonts("Times New Roman", pdf_fonttype=3)
     return font_size * scale
 
 

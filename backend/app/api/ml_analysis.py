@@ -9,7 +9,6 @@ from typing import List, Optional
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from matplotlib import font_manager
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -17,33 +16,13 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.models.database import get_db, Task
+from app.core.fonts import configure_matplotlib_fonts
 
 router = APIRouter(prefix="/api/ml", tags=["ml-analysis"])
 
 
 def _configure_ml_plot_fonts():
-    font_dir = Path(__file__).resolve().parents[2] / "fonts"
-    if font_dir.exists():
-        for font_path in list(font_dir.glob("*.ttf")) + list(font_dir.glob("*.otf")):
-            try:
-                font_manager.fontManager.addfont(str(font_path))
-            except Exception:
-                pass
-
-    available = {font.name for font in font_manager.fontManager.ttflist}
-    preferred = ["Times New Roman", "Times", "Liberation Serif", "Nimbus Roman", "DejaVu Serif"]
-    selected = next((name for name in preferred if name in available), "DejaVu Serif")
-    plt.rcParams.update({
-        "font.family": "serif",
-        "font.serif": [selected] + [name for name in preferred if name != selected],
-        "mathtext.fontset": "custom",
-        "mathtext.rm": selected,
-        "mathtext.it": selected,
-        "mathtext.bf": selected,
-        "axes.unicode_minus": False,
-        "pdf.fonttype": 42,
-        "ps.fonttype": 42,
-    })
+    configure_matplotlib_fonts("Times New Roman", pdf_fonttype=3)
 
 
 def _resolve_dpr_csv(task: Task) -> str | None:

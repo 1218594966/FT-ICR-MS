@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.models.database import get_db, Task
+from app.core.fonts import configure_matplotlib_fonts
 
 router = APIRouter(prefix="/api/data-analysis", tags=["data-analysis"])
 
@@ -145,10 +146,7 @@ def _draw_dpr_figure(
 ):
     df = _load_dpr_dataframe(session_id, filename)
 
-    matplotlib.rcParams['font.family'] = font_family or 'Times New Roman'
-    matplotlib.rcParams['pdf.fonttype'] = 3
-    matplotlib.rcParams['ps.fonttype'] = 3
-    matplotlib.rcParams['svg.fonttype'] = 'none'
+    configure_matplotlib_fonts(font_family or 'Times New Roman', pdf_fonttype=3)
 
     fs = {
         'axes_labels': font_size, 'tick_labels': font_size - 2,
@@ -551,9 +549,7 @@ def export_dpr_pdf(
     cat_map = {0: 'Disappearance', 1: 'Resistant', 2: 'Product'}
     df['molecule_category'] = df['value'].map(cat_map)
 
-    matplotlib.rcParams['font.family'] = 'Times New Roman'
-    matplotlib.rcParams['pdf.fonttype'] = 3
-    matplotlib.rcParams['ps.fonttype'] = 3
+    configure_matplotlib_fonts('Times New Roman', pdf_fonttype=3)
 
     fs = {
         'axes_labels': font_size, 'tick_labels': font_size - 2,
@@ -692,9 +688,7 @@ def export_dpr_tif(
     cat_map = {0: 'Disappearance', 1: 'Resistant', 2: 'Product'}
     df['molecule_category'] = df['value'].map(cat_map)
 
-    matplotlib.rcParams['font.family'] = 'Times New Roman'
-    matplotlib.rcParams['pdf.fonttype'] = 3
-    matplotlib.rcParams['ps.fonttype'] = 3
+    configure_matplotlib_fonts('Times New Roman', pdf_fonttype=3)
 
     fs = {'axes_labels': font_size, 'tick_labels': font_size - 2, 'legend': font_size - 2,
           'panel_labels': font_size, 'hist_tick_labels': font_size - 2}

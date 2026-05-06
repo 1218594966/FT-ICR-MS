@@ -3,8 +3,12 @@ FROM python:3.10-slim
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential gcc g++ libgomp1 && \
+    build-essential gcc g++ libgomp1 \
+    fontconfig fonts-croscore fonts-liberation2 fonts-noto-cjk && \
+    fc-cache -f -v && \
     rm -rf /var/lib/apt/lists/*
+
+ENV MPLCONFIGDIR=/tmp/matplotlib
 
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
