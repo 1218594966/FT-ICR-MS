@@ -66,3 +66,10 @@ def configure_matplotlib_fonts(font_family: str = "Times New Roman", pdf_fonttyp
         "svg.fonttype": "none",
     })
     return selected_serif
+
+
+def apply_font_to_figure(fig, font_family: str = "Times New Roman"):
+    selected = configure_matplotlib_fonts(font_family)
+    for text in fig.findobj(match=matplotlib.text.Text):
+        text.set_fontfamily(selected)
+    return selected

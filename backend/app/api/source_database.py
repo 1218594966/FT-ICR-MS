@@ -17,7 +17,7 @@ from scipy.stats import chi2_contingency
 from sqlalchemy.orm import Session
 
 from app.models.database import MolecularDatabase, get_db
-from app.core.fonts import configure_matplotlib_fonts
+from app.core.fonts import apply_font_to_figure, configure_matplotlib_fonts
 
 router = APIRouter(prefix="/api/source-db", tags=["source-database"])
 
@@ -104,6 +104,7 @@ def _sum_intensity(weights, formulas=None):
 
 def _fig_to_base64(fig):
     buf = io.BytesIO()
+    apply_font_to_figure(fig)
     fig.savefig(buf, format="png", dpi=180, bbox_inches="tight")
     plt.close(fig)
     buf.seek(0)
@@ -112,6 +113,7 @@ def _fig_to_base64(fig):
 
 def _fig_to_pdf_base64(fig):
     buf = io.BytesIO()
+    apply_font_to_figure(fig)
     fig.savefig(buf, format="pdf", bbox_inches="tight")
     plt.close(fig)
     buf.seek(0)

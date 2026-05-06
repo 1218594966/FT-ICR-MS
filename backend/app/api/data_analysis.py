@@ -1,4 +1,4 @@
-import os
+﻿import os
 import io
 import re
 import uuid
@@ -103,6 +103,44 @@ def _read_csv_auto(path_or_buffer):
     if last_error:
         raise last_error
     return pd.read_csv(path_or_buffer)
+
+
+def _normalized_columns(df):
+    return {str(col).strip().lower().replace("_", " "): col for col in df.columns}
+
+
+def _find_formula_col(df):
+    normalized = _normalized_columns(df)
+    for candidate in ("Molecular Formula", "MolForm", "Formula", "formula"):
+        key = candidate.strip().lower().replace("_", " ")
+        if key in normalized:
+            return normalized[key]
+    return None
+
+
+def _find_intensity_col(df):
+    normalized = _normalized_columns(df)
+    for candidate in ("Peak Height", "PeakHeight", "Peak_Height", "Intensity", "intensity", "Abundance", "宄伴珮", "寮哄害"):
+        key = candidate.strip().lower().replace("_", " ")
+        if key in normalized:
+            return normalized[key]
+    return None
+
+
+def _molecule_intensity_map(df, filename: str):
+    formula_col = _find_formula_col(df)
+    if not formula_col:
+        raise HTTPException(status_code=400, detail=f"{filename} must contain Molecular Formula or MolForm")
+
+    intensity_col = _find_intensity_col(df)
+    clean = pd.DataFrame({"MolForm": df[formula_col].fillna("").astype(str).str.strip()})
+    clean = clean[clean["MolForm"] != ""]
+    if intensity_col:
+        clean["intensity"] = pd.to_numeric(df.loc[clean.index, intensity_col], errors="coerce").fillna(0).clip(lower=0)
+    else:
+        clean["intensity"] = 1.0
+    grouped = clean.groupby("MolForm", as_index=True)["intensity"].sum()
+    return {str(formula): float(value) for formula, value in grouped.items()}
 
 
 def _safe_session_id(session_id: str) -> str:
@@ -265,16 +303,10 @@ async def process_csvs(
     file2: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    try:
-        import pykrev as pk
-    except ImportError:
-        raise HTTPException(status_code=500, detail="pykrev not installed")
-
     session_id = str(uuid.uuid4())[:8]
     session_dir = UPLOAD_DIR / session_id
     session_dir.mkdir(parents=True, exist_ok=True)
 
-    # Create task record in database
     safe_file1 = Path(file1.filename or "file1.csv").name
     safe_file2 = Path(file2.filename or "file2.csv").name
     if safe_file1 == safe_file2:
@@ -304,93 +336,58 @@ async def process_csvs(
         name1 = Path(safe_file1).stem
         name2 = Path(safe_file2).stem
 
-        # Update task progress
         task.current_step = "reading_files"
         task.progress = 10.0
         db.commit()
 
         df1 = _read_csv_auto(csv1_path)
         df2 = _read_csv_auto(csv2_path)
+        map1 = _molecule_intensity_map(df1, safe_file1)
+        map2 = _molecule_intensity_map(df2, safe_file2)
+        if not map1 or not map2:
+            raise HTTPException(status_code=400, detail="Both files must contain at least one valid molecular formula")
 
-        # Check required columns for pykrev
-        required_cols = ['Molecular Formula', 'Calibrated m/z', 'Peak Height']
-        for i, (df, name) in enumerate([(df1, safe_file1), (df2, safe_file2)], 1):
-            missing = [c for c in required_cols if c not in df.columns]
-            if missing:
-                task.status = "failed"
-                task.error_message = f"文件 {name} 缺少必要列: {missing}"
-                task.finished_at = datetime.utcnow()
-                db.commit()
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"文件 {name} 缺少必要列: {missing}。请确保 CSV 是从分析结果导出的完整文件。"
-                )
-
-        # Update task progress
-        task.current_step = "processing_pykrev"
-        task.progress = 30.0
-        db.commit()
-
-        ms1 = pk.read_corems(df1, mass_type='calibrated', remove_multiply_assigned_peaks=True, verbose=False)
-        ms2 = pk.read_corems(df2, mass_type='calibrated', remove_multiply_assigned_peaks=True, verbose=False)
-
-        msTupleDict = pk.msTupleDict()
-        msTupleDict[name1] = ms1
-        msTupleDict[name2] = ms2
-
-        # Update task progress
         task.current_step = "building_matrix"
         task.progress = 50.0
         db.commit()
 
-        raw_matrix = pk.ordination_matrix(msTupleDict, impute_value=0)
-        binary_matrix = pk.normalise_intensity(raw_matrix, norm_method='binary')
+        formulas = sorted(set(map1) | set(map2))
+        raw_t = pd.DataFrame({
+            "MolForm": formulas,
+            "Col1": [map1.get(formula, 0.0) for formula in formulas],
+            "Col2": [map2.get(formula, 0.0) for formula in formulas],
+        })
+        binary_t = pd.DataFrame({
+            "MolForm": formulas,
+            "Col1": [1 if map1.get(formula, 0.0) > 0 else 0 for formula in formulas],
+            "Col2": [1 if map2.get(formula, 0.0) > 0 else 0 for formula in formulas],
+        })
 
-        # Transpose: rows=formulas, cols=samples
-        raw_matrix = raw_matrix.T
-        binary_matrix = binary_matrix.T
-
-        raw_path = session_dir / f"raw_{name1}_{name2}.csv"
-        binary_path = session_dir / f"binary_{name1}_{name2}.csv"
-        raw_matrix.to_csv(raw_path)
-        binary_matrix.to_csv(binary_path)
-
-        # Update task progress
         task.current_step = "calculating_metrics"
         task.progress = 70.0
         db.commit()
 
-        # Transpose to MolForm, Col1, Col2 format
-        raw_t = raw_matrix.reset_index()
-        raw_t.columns = ['MolForm'] + [f'Col{i+1}' for i in range(raw_t.shape[1] - 1)]
-        binary_t = binary_matrix.reset_index()
-        binary_t.columns = ['MolForm'] + [f'Col{i+1}' for i in range(binary_t.shape[1] - 1)]
-
-        # Calculate metrics on binary transposed data
-        metrics_list = binary_t['MolForm'].apply(_calc_metrics)
-        metrics_df = pd.DataFrame(metrics_list.tolist())
+        metrics_df = pd.DataFrame(binary_t["MolForm"].apply(_calc_metrics).tolist())
         binary_final = pd.concat([binary_t, metrics_df], axis=1)
 
-        # Add DPR classification column (D=Disappearance, P=Product, R=Resistant)
         def determine_dpr(row):
-            if row['Col1'] == 1 and row['Col2'] == 0:
-                return 'D'
-            elif row['Col1'] == 0 and row['Col2'] == 1:
-                return 'P'
-            elif row['Col1'] == 1 and row['Col2'] == 1:
-                return 'R'
-            else:
-                return None
-        binary_final['NewCol'] = binary_final.apply(determine_dpr, axis=1)
+            if row["Col1"] == 1 and row["Col2"] == 0:
+                return "D"
+            if row["Col1"] == 0 and row["Col2"] == 1:
+                return "P"
+            if row["Col1"] == 1 and row["Col2"] == 1:
+                return "R"
+            return None
+
+        binary_final["NewCol"] = binary_final.apply(determine_dpr, axis=1)
 
         raw_t_path = session_dir / f"transposed_raw_{name1}_{name2}.csv"
         binary_t_path = session_dir / f"transposed_binary_{name1}_{name2}.csv"
         final_path = session_dir / f"final_{name1}_{name2}.csv"
-        raw_t.to_csv(raw_t_path, index=False)
-        binary_t.to_csv(binary_t_path, index=False)
-        binary_final.to_csv(final_path, index=False)
+        raw_t.to_csv(raw_t_path, index=False, encoding="utf-8-sig")
+        binary_t.to_csv(binary_t_path, index=False, encoding="utf-8-sig")
+        binary_final.to_csv(final_path, index=False, encoding="utf-8-sig")
 
-        # Update task as completed
         task.status = "success"
         task.progress = 100.0
         task.current_step = "completed"
@@ -400,8 +397,8 @@ async def process_csvs(
             "session_id": session_id,
             "name1": name1,
             "name2": name2,
-            "raw_matrix_shape": list(raw_matrix.shape),
-            "binary_matrix_shape": list(binary_matrix.shape),
+            "raw_matrix_shape": [len(raw_t), 2],
+            "binary_matrix_shape": [len(binary_t), 2],
             "columns": list(binary_final.columns),
             "final_file": f"final_{name1}_{name2}.csv",
         }
@@ -411,26 +408,27 @@ async def process_csvs(
             "session_id": session_id,
             "name1": name1,
             "name2": name2,
-            "raw_matrix_shape": list(raw_matrix.shape),
-            "binary_matrix_shape": list(binary_matrix.shape),
-            "final_preview": binary_final.head(10).to_dict(orient='records'),
+            "raw_matrix_shape": [len(raw_t), 2],
+            "binary_matrix_shape": [len(binary_t), 2],
+            "final_preview": binary_final.head(10).to_dict(orient="records"),
             "final_file": f"final_{name1}_{name2}.csv",
             "columns": list(binary_final.columns),
             "task_id": session_id,
         }
-    except HTTPException:
-        # Re-raise HTTP exceptions as-is
+    except HTTPException as exc:
+        task.status = "failed"
+        task.error_message = str(exc.detail)
+        task.finished_at = datetime.utcnow()
+        db.commit()
         raise
-    except Exception as e:
+    except Exception as exc:
         import traceback
-        try:
-            task.status = "failed"
-            task.error_message = str(e)
-            task.finished_at = datetime.utcnow()
-            db.commit()
-        except:
-            pass
-        raise HTTPException(status_code=500, detail=f"{str(e)}\n{traceback.format_exc()}")
+        task.status = "failed"
+        task.error_message = str(exc)
+        task.finished_at = datetime.utcnow()
+        db.commit()
+        raise HTTPException(status_code=500, detail=f"{str(exc)}\n{traceback.format_exc()}")
+
 
 
 @router.get("/download/{session_id}/{filename}")

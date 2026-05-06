@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.models.database import get_db, Task
-from app.core.fonts import configure_matplotlib_fonts
+from app.core.fonts import apply_font_to_figure, configure_matplotlib_fonts
 
 router = APIRouter(prefix="/api/ml", tags=["ml-analysis"])
 
@@ -67,7 +67,7 @@ def _load_ml_deps():
         import shap
         import xgboost
         from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-        from sklearn.model_selection import GridSearchCV, train_test_split
+        from sklearn.model_selection import train_test_split
         from sklearn.preprocessing import LabelEncoder
     except ImportError as e:
         raise HTTPException(
@@ -80,7 +80,6 @@ def _load_ml_deps():
         "accuracy_score": accuracy_score,
         "classification_report": classification_report,
         "confusion_matrix": confusion_matrix,
-        "GridSearchCV": GridSearchCV,
         "train_test_split": train_test_split,
         "LabelEncoder": LabelEncoder,
     }
@@ -137,6 +136,7 @@ def _validate_dpr_df(df: pd.DataFrame, selected_classes: Optional[List[str]] = N
 
 def _figure_to_base64(fig):
     buf = io.BytesIO()
+    apply_font_to_figure(fig)
     fig.savefig(buf, format='png', dpi=150, bbox_inches='tight')
     plt.close(fig)
     buf.seek(0)
@@ -145,9 +145,15 @@ def _figure_to_base64(fig):
 
 def _build_shap_plot(shap, best_model, X_background, X_explain, class_index: int, class_name: str, num_classes: int, dataset_label: str):
     _configure_ml_plot_fonts()
-    fig = plt.figure(figsize=(10, 8))
+    max_shap_rows = 500
+    if len(X_explain) > max_shap_rows:
+        X_explain = X_explain.sample(n=max_shap_rows, random_state=42)
+    background = X_background
+    if len(background) > max_shap_rows:
+        background = background.sample(n=max_shap_rows, random_state=42)
+    fig = plt.figure(figsize=(11, 8))
     try:
-        explainer = shap.Explainer(best_model, X_background)
+        explainer = shap.TreeExplainer(best_model)
         shap_values = explainer(X_explain)
         values = shap_values.values
         if getattr(values, "ndim", 0) == 3:
@@ -166,15 +172,17 @@ def _build_shap_plot(shap, best_model, X_background, X_explain, class_index: int
             )
         shap.plots.beeswarm(shap_values, max_display=15, show=False)
         plt.title(f"SHAP Beeswarm for class {class_name} ({dataset_label})")
-        plt.tight_layout()
+        apply_font_to_figure(plt.gcf())
+        plt.subplots_adjust(left=0.34, right=0.98, bottom=0.12, top=0.92)
     except Exception:
         plt.close(fig)
-        fig, ax = plt.subplots(figsize=(10, 8))
-        importances = getattr(best_model, "feature_importances_", np.zeros(X_background.shape[1]))
+        fig, ax = plt.subplots(figsize=(11, 8))
+        importances = getattr(best_model, "feature_importances_", np.zeros(background.shape[1]))
         order = np.argsort(importances)[-15:]
-        ax.barh(np.array(X_background.columns)[order], importances[order], color="#3b82f6")
+        ax.barh(np.array(background.columns)[order], importances[order], color="#3b82f6")
         ax.set_title(f"Feature Importance for class {class_name}")
-        plt.tight_layout()
+        apply_font_to_figure(fig)
+        plt.subplots_adjust(left=0.34, right=0.98, bottom=0.12, top=0.92)
     return fig
 
 
@@ -218,7 +226,12 @@ def _analyze_dataframe(
     model_kwargs = {
         "random_state": 42,
         "eval_metric": "mlogloss" if num_classes > 2 else "logloss",
-        "n_jobs": 1,
+        "n_jobs": 2,
+        "max_depth": 3,
+        "learning_rate": 0.08,
+        "n_estimators": 120,
+        "subsample": 0.9,
+        "colsample_bytree": 0.9,
     }
     if num_classes > 2:
         model_kwargs.update({"objective": "multi:softprob", "num_class": num_classes})
@@ -226,24 +239,15 @@ def _analyze_dataframe(
         model_kwargs.update({"objective": "binary:logistic"})
     xgb_classifier = deps["xgboost"].XGBClassifier(**model_kwargs)
 
-    cv = min(3, min_class_count)
-    if cv >= 2:
-        grid_search = deps["GridSearchCV"](
-            estimator=xgb_classifier,
-            param_grid={'max_depth': [3, 5], 'learning_rate': [0.1], 'n_estimators': [100]},
-            cv=cv,
-            scoring='accuracy',
-            n_jobs=1,
-            verbose=0,
-        )
-        grid_search.fit(X_train, y_train)
-        best_model = grid_search.best_estimator_
-        best_params = grid_search.best_params_
-    else:
-        best_model = xgb_classifier
-        best_model.fit(X_train, y_train)
-        best_params = {"max_depth": best_model.max_depth, "learning_rate": best_model.learning_rate,
-                       "n_estimators": best_model.n_estimators}
+    best_model = xgb_classifier
+    best_model.fit(X_train, y_train)
+    best_params = {
+        "max_depth": best_model.max_depth,
+        "learning_rate": best_model.learning_rate,
+        "n_estimators": best_model.n_estimators,
+        "subsample": best_model.subsample,
+        "colsample_bytree": best_model.colsample_bytree,
+    }
 
     y_pred = best_model.predict(X_test)
     y_pred_train = best_model.predict(X_train)
@@ -261,6 +265,11 @@ def _analyze_dataframe(
         "train": ("训练集", "Train set", X_train),
         "test": ("测试集", "Test set", X_test),
         "all": ("全部数据", "All data", X),
+    }
+    shap_dataset_map = {
+        "train": ("Train set", "Train set", X_train),
+        "test": ("Test set", "Test set", X_test),
+        "all": ("All data", "All data", X),
     }
     shap_dataset_key = shap_dataset if shap_dataset in shap_dataset_map else "train"
     shap_dataset_label, shap_dataset_plot_label, X_shap = shap_dataset_map[shap_dataset_key]

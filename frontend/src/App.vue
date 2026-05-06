@@ -1,5 +1,5 @@
 <template>
-  <el-config-provider :locale="zhCn">
+  <el-config-provider :locale="elementLocale">
     <div class="app-layout">
       <aside class="sidebar">
         <div class="logo">
@@ -12,6 +12,7 @@
           </div>
           <span class="logo-text">FT-ICR MS</span>
         </div>
+
         <el-menu
           :default-active="activeMenu"
           :router="true"
@@ -22,37 +23,46 @@
         >
           <el-menu-item index="/">
             <el-icon><Odometer /></el-icon>
-            <span>仪表盘</span>
+            <span>{{ t('dashboard') }}</span>
           </el-menu-item>
           <el-menu-item index="/analysis">
             <el-icon><DataAnalysis /></el-icon>
-            <span>新建分析</span>
+            <span>{{ t('newAnalysis') }}</span>
           </el-menu-item>
           <el-menu-item index="/data-analysis">
             <el-icon><TrendCharts /></el-icon>
-            <span>数据分析</span>
+            <span>{{ t('dataAnalysis') }}</span>
           </el-menu-item>
           <el-menu-item index="/batch-processing">
             <el-icon><FolderOpened /></el-icon>
-            <span>批量处理</span>
+            <span>{{ t('batchProcessing') }}</span>
           </el-menu-item>
           <el-menu-item index="/ml-analysis">
             <el-icon><Cpu /></el-icon>
-            <span>机器学习</span>
+            <span>{{ t('mlAnalysis') }}</span>
           </el-menu-item>
           <el-menu-item index="/source-database">
             <el-icon><Files /></el-icon>
-            <span>数据库创建</span>
+            <span>{{ t('sourceDatabase') }}</span>
           </el-menu-item>
           <el-menu-item index="/history">
             <el-icon><Clock /></el-icon>
-            <span>历史记录</span>
+            <span>{{ t('history') }}</span>
           </el-menu-item>
         </el-menu>
+
         <div class="sidebar-footer">
+          <el-segmented
+            :model-value="lang"
+            :options="languageOptions"
+            size="small"
+            block
+            @update:model-value="setLang"
+          />
           <span class="version">v1.0.0</span>
         </div>
       </aside>
+
       <main class="main-content">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
@@ -65,14 +75,28 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import en from 'element-plus/es/locale/lang/en'
+import { useI18n } from './i18n'
 
 const route = useRoute()
+const { lang, t, setLang } = useI18n()
+
+const elementLocale = computed(() => (lang.value === 'zh' ? zhCn : en))
+const languageOptions = computed(() => [
+  { label: 'EN', value: 'en' },
+  { label: '中文', value: 'zh' },
+])
 const activeMenu = computed(() => {
   if (route.path.startsWith('/task')) return '/history'
   return route.path
+})
+
+watchEffect(() => {
+  document.title = `${t(route.meta?.titleKey || 'appTitle')} - ${t('appTitle')}`
+  document.documentElement.lang = lang.value === 'zh' ? 'zh-CN' : 'en'
 })
 </script>
 
@@ -145,8 +169,10 @@ const activeMenu = computed(() => {
 }
 
 .sidebar-footer {
-  padding: 16px 20px;
+  padding: 12px 16px 16px;
   border-top: 1px solid var(--border-color);
+  display: grid;
+  gap: 10px;
   .version {
     font-size: 12px;
     color: var(--text-muted);

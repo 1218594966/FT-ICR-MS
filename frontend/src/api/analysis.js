@@ -5,7 +5,7 @@ export function uploadDataFile(file) {
   fd.append('file', file)
   return api.post('/upload/data', fd, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 600000,
+    timeout: 1800000,
   })
 }
 
@@ -16,7 +16,7 @@ export function uploadFolder(files) {
   }
   return api.post('/upload/folder', fd, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 600000,
+    timeout: 1800000,
   })
 }
 
