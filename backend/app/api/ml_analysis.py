@@ -145,12 +145,7 @@ def _figure_to_base64(fig):
 
 def _build_shap_plot(shap, best_model, X_background, X_explain, class_index: int, class_name: str, num_classes: int, dataset_label: str):
     _configure_ml_plot_fonts()
-    max_shap_rows = 500
-    if len(X_explain) > max_shap_rows:
-        X_explain = X_explain.sample(n=max_shap_rows, random_state=42)
     background = X_background
-    if len(background) > max_shap_rows:
-        background = background.sample(n=max_shap_rows, random_state=42)
     fig = plt.figure(figsize=(11, 8))
     try:
         explainer = shap.TreeExplainer(best_model)
