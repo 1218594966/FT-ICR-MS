@@ -4,35 +4,35 @@
     <p class="page-subtitle">{{ pageText.subtitle }}</p>
 
     <section class="section card-glass">
-      <h2 class="section-title"><el-icon><Files /></el-icon> 创建或追加分子数据库</h2>
+      <h2 class="section-title"><el-icon><Files /></el-icon> {{ text.createOrAppend }}</h2>
       <div class="form-grid">
         <div class="field">
-          <span>写入方式</span>
+          <span>{{ text.writeMode }}</span>
           <el-radio-group v-model="writeMode">
-            <el-radio-button value="new">新建/按标签写入</el-radio-button>
-            <el-radio-button value="append">追加到已有数据库</el-radio-button>
+            <el-radio-button value="new">{{ text.writeNew }}</el-radio-button>
+            <el-radio-button value="append">{{ text.writeAppend }}</el-radio-button>
           </el-radio-group>
         </div>
         <div v-if="writeMode === 'new'" class="field">
-          <span>标签/数据库名称</span>
-          <el-input v-model="databaseName" placeholder="例如：再生水、污水、上游背景" />
+          <span>{{ text.dbName }}</span>
+          <el-input v-model="databaseName" :placeholder="text.dbNamePlaceholder" />
         </div>
         <div v-else class="field">
-          <span>已有数据库</span>
-          <el-select v-model="selectedDatabaseId" filterable placeholder="选择要追加的数据库">
+          <span>{{ text.existingDb }}</span>
+          <el-select v-model="selectedDatabaseId" filterable :placeholder="text.chooseAppendDb">
             <el-option v-for="db in databases" :key="db.id" :label="db.name" :value="db.id" />
           </el-select>
         </div>
         <div class="field full">
-          <span>备注</span>
-          <el-input v-model="description" placeholder="可填写来源说明、采样批次或点位信息" />
+          <span>{{ text.description }}</span>
+          <el-input v-model="description" :placeholder="text.descriptionPlaceholder" />
         </div>
       </div>
 
       <div class="upload-box" @click="triggerBuildInput">
         <input ref="buildInput" type="file" accept=".csv" multiple style="display:none" @change="onBuildFiles" />
         <el-icon><Upload /></el-icon>
-        <strong>选择任意数量 CSV 文件</strong>
+        <strong>{{ text.chooseAnyCsv }}</strong>
         <span>{{ buildFileLabel }}</span>
       </div>
       <div v-if="buildFiles.length" class="file-list">
@@ -42,22 +42,22 @@
         <el-button type="primary" :disabled="!canBuild || building" @click="buildDatabase">
           <el-icon v-if="!building"><CaretRight /></el-icon>
           <el-icon v-else class="is-loading"><Loading /></el-icon>
-          {{ building ? '写入中...' : '创建/更新数据库' }}
+          {{ building ? text.writing : text.createUpdateDb }}
         </el-button>
-        <el-button @click="loadDatabases">刷新数据库列表</el-button>
+        <el-button @click="loadDatabases">{{ text.refreshDbs }}</el-button>
       </div>
     </section>
 
     <section class="section card-glass">
-      <h2 class="section-title"><el-icon><DataBoard /></el-icon> 已有分子数据库</h2>
+      <h2 class="section-title"><el-icon><DataBoard /></el-icon> {{ text.existingDatabases }}</h2>
       <el-table :data="databases" v-loading="loadingDatabases" class="db-table">
-        <el-table-column prop="name" label="标签/数据库" min-width="180" />
-        <el-table-column prop="formula_count" label="分子数" width="110" />
-        <el-table-column prop="file_count" label="来源文件数" width="120" />
-        <el-table-column prop="updated_at" label="更新时间" width="190">
+        <el-table-column prop="name" :label="text.dbLabel" min-width="180" />
+        <el-table-column prop="formula_count" :label="text.formulaCount" width="110" />
+        <el-table-column prop="file_count" :label="text.sourceFileCount" width="120" />
+        <el-table-column prop="updated_at" :label="text.updatedAt" width="190">
           <template #default="{ row }">{{ formatTime(row.updated_at) }}</template>
         </el-table-column>
-        <el-table-column label="来源文件" min-width="260">
+        <el-table-column :label="text.sourceFiles" min-width="260">
           <template #default="{ row }">
             <div class="source-files">
               <el-tag v-for="file in row.files.slice(0, 4)" :key="file.filename" size="small" effect="plain">
@@ -67,11 +67,11 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="210">
+        <el-table-column :label="text.actions" width="210">
           <template #default="{ row }">
             <div class="operation-buttons">
-              <el-button size="small" @click="downloadDatabase(row)">下载 CSV</el-button>
-              <el-button size="small" type="danger" plain @click="deleteDatabase(row)">删除</el-button>
+              <el-button size="small" @click="downloadDatabase(row)">{{ text.downloadCsv }}</el-button>
+              <el-button size="small" type="danger" plain @click="deleteDatabase(row)">{{ text.delete }}</el-button>
             </div>
           </template>
         </el-table-column>
@@ -79,110 +79,110 @@
     </section>
 
     <section class="section card-glass">
-      <h2 class="section-title"><el-icon><Connection /></el-icon> 样品与数据库对比</h2>
+      <h2 class="section-title"><el-icon><Connection /></el-icon> {{ text.sampleDbCompare }}</h2>
       <div class="compare-row">
-        <el-select v-model="compareDatabaseId" filterable placeholder="选择用于对比的数据库">
+        <el-select v-model="compareDatabaseId" filterable :placeholder="text.chooseCompareDb">
           <el-option v-for="db in databases" :key="db.id" :label="`${db.name} (${db.formula_count})`" :value="db.id" />
         </el-select>
         <div class="sample-picker" :class="{ selected: compareFile }" @click="triggerCompareInput">
           <input ref="compareInput" type="file" accept=".csv" style="display:none" @change="onCompareFile" />
           <el-icon><UploadFilled /></el-icon>
           <div>
-            <strong>{{ compareFile?.name || '点击选择待对比样品 CSV' }}</strong>
-            <span>需要包含 Molecular Formula 或 MolForm；Peak Height 会保留到导出结果中</span>
+            <strong>{{ compareFile?.name || text.chooseCompareCsv }}</strong>
+            <span>{{ text.compareCsvHelp }}</span>
           </div>
         </div>
         <el-button type="primary" :disabled="!compareDatabaseId || !compareFile || comparing" @click="compareDatabase">
-          {{ comparing ? '对比中...' : '开始对比' }}
+          {{ comparing ? text.comparing : text.startCompare }}
         </el-button>
       </div>
     </section>
 
     <section class="section card-glass">
-      <h2 class="section-title"><el-icon><TrendCharts /></el-icon> 两文件 DPR 与数据库对比</h2>
+      <h2 class="section-title"><el-icon><TrendCharts /></el-icon> {{ text.twoFileDprCompare }}</h2>
       <div class="dpr-row">
-        <el-select v-model="dprDatabaseId" filterable placeholder="选择来源数据库">
+        <el-select v-model="dprDatabaseId" filterable :placeholder="text.chooseSourceDb">
           <el-option v-for="db in databases" :key="db.id" :label="`${db.name} (${db.formula_count})`" :value="db.id" />
         </el-select>
         <div class="sample-picker" :class="{ selected: dprUpstreamFile }" @click="triggerDprInput('upstream')">
           <input ref="dprUpstreamInput" type="file" accept=".csv" style="display:none" @change="onDprFile('upstream', $event)" />
           <el-icon><UploadFilled /></el-icon>
           <div>
-            <strong>{{ dprUpstreamFile?.name || '点击选择上游/前点位 CSV' }}</strong>
-            <span>用于和下游文件共同定义 D/P/R</span>
+            <strong>{{ dprUpstreamFile?.name || text.chooseUpstream }}</strong>
+            <span>{{ text.upstreamHelp }}</span>
           </div>
         </div>
         <div class="sample-picker" :class="{ selected: dprDownstreamFile }" @click="triggerDprInput('downstream')">
           <input ref="dprDownstreamInput" type="file" accept=".csv" style="display:none" @change="onDprFile('downstream', $event)" />
           <el-icon><UploadFilled /></el-icon>
           <div>
-            <strong>{{ dprDownstreamFile?.name || '点击选择下游/后点位 CSV' }}</strong>
-            <span>D=上游有下游无，P=下游有上游无，R=两者都有</span>
+            <strong>{{ dprDownstreamFile?.name || text.chooseDownstream }}</strong>
+            <span>{{ text.downstreamHelp }}</span>
           </div>
         </div>
       </div>
       <div class="actions">
-        <el-checkbox v-model="dprRemoveCore">移除核心分子</el-checkbox>
+        <el-checkbox v-model="dprRemoveCore">{{ text.removeCore }}</el-checkbox>
         <el-button type="primary" :disabled="!canRunDpr || dprRunning" @click="runDprDatabase">
-          {{ dprRunning ? '分析中...' : '开始 DPR 数据库对比' }}
+          {{ dprRunning ? text.analyzing : text.startDprCompare }}
         </el-button>
       </div>
     </section>
 
     <section v-if="buildResult" class="section card-glass">
-      <h2 class="section-title"><el-icon><CircleCheck /></el-icon> 最近一次写入结果</h2>
+      <h2 class="section-title"><el-icon><CircleCheck /></el-icon> {{ text.lastWriteResult }}</h2>
       <div class="stats-row">
         <div class="stat-card">
           <span class="stat-val">{{ buildResult.database.formula_count }}</span>
-          <span class="stat-lbl">{{ buildResult.database.name }} 分子数</span>
+          <span class="stat-lbl">{{ buildResult.database.name }} {{ text.formulaCount }}</span>
         </div>
         <div class="stat-card">
           <span class="stat-val">{{ buildResult.database.file_count }}</span>
-          <span class="stat-lbl">累计来源文件</span>
+          <span class="stat-lbl">{{ text.totalSourceFiles }}</span>
         </div>
       </div>
       <el-table :data="buildResult.uploaded" size="small">
-        <el-table-column prop="filename" label="文件" />
-        <el-table-column prop="formula_count" label="文件内分子数" width="140" />
-        <el-table-column prop="new_unique_count" label="新增唯一分子" width="140" />
-        <el-table-column prop="total_intensity" label="总强度" width="140" />
+        <el-table-column prop="filename" :label="text.file" />
+        <el-table-column prop="formula_count" :label="text.formulasInFile" width="140" />
+        <el-table-column prop="new_unique_count" :label="text.newUnique" width="140" />
+        <el-table-column prop="total_intensity" :label="text.totalIntensity" width="140" />
       </el-table>
     </section>
 
     <section v-if="compareResult" class="section card-glass">
-      <h2 class="section-title"><el-icon><TrendCharts /></el-icon> 对比结果</h2>
+      <h2 class="section-title"><el-icon><TrendCharts /></el-icon> {{ text.compareResult }}</h2>
       <div class="stats-row">
         <div class="stat-card">
           <span class="stat-val">{{ compareResult.summary.overlap_count }}</span>
-          <span class="stat-lbl">Overlap 命中分子</span>
+          <span class="stat-lbl">Overlap {{ text.hitFormulas }}</span>
         </div>
         <div class="stat-card">
           <span class="stat-val">{{ compareResult.summary.query_overlap_rate.toFixed(2) }}%</span>
-          <span class="stat-lbl">样品命中率</span>
+          <span class="stat-lbl">{{ text.sampleHitRate }}</span>
         </div>
       </div>
 
       <div class="download-row">
-        <el-button @click="downloadBase64(compareResult.downloads.overlap_csv_base64, 'overlap.csv')">下载 Overlap</el-button>
-        <el-button @click="downloadBase64(compareResult.downloads.sample_only_csv_base64, 'sample_only.csv')">下载 Sample only</el-button>
-        <el-button @click="downloadBase64(compareResult.downloads.database_only_csv_base64, 'database_only.csv')">下载 Database only</el-button>
+        <el-button @click="downloadBase64(compareResult.downloads.overlap_csv_base64, 'overlap.csv')">{{ text.download }} Overlap</el-button>
+        <el-button @click="downloadBase64(compareResult.downloads.sample_only_csv_base64, 'sample_only.csv')">{{ text.download }} Sample only</el-button>
+        <el-button @click="downloadBase64(compareResult.downloads.database_only_csv_base64, 'database_only.csv')">{{ text.download }} Database only</el-button>
       </div>
 
       <div class="result-grid compare-result-grid">
         <div class="info-panel">
-          <h3>各来源文件相似度</h3>
+          <h3>{{ text.sourceSimilarity }}</h3>
           <el-table :data="compareResult.source_file_similarity" size="small">
-            <el-table-column prop="filename" label="来源文件" min-width="180" show-overflow-tooltip />
-            <el-table-column prop="overlap" label="命中" width="80" />
-            <el-table-column prop="sample_coverage" label="样品覆盖率" width="120">
+            <el-table-column prop="filename" :label="text.sourceFile" min-width="180" show-overflow-tooltip />
+            <el-table-column prop="overlap" :label="text.hit" width="80" />
+            <el-table-column prop="sample_coverage" :label="text.sampleCoverage" width="120">
               <template #default="{ row }">{{ row.sample_coverage.toFixed(2) }}%</template>
             </el-table-column>
           </el-table>
         </div>
         <div class="info-panel">
-          <h3>元素类别分布</h3>
+          <h3>{{ text.elementDistribution }}</h3>
           <el-table :data="compareResult.element_class_distribution" size="small" max-height="280">
-            <el-table-column prop="class" label="类别" width="90" />
+            <el-table-column prop="class" :label="text.class" width="90" />
             <el-table-column prop="overlap" label="Overlap" />
             <el-table-column prop="sample_only" label="Sample only" />
             <el-table-column prop="database_only" label="Database only" />
@@ -192,87 +192,87 @@
 
       <div class="plot-and-advice">
         <div class="plot-item">
-          <h3>样品与数据库分子集合关系</h3>
+          <h3>{{ text.sampleDbSetRelation }}</h3>
           <img :src="plotSrc(compareResult.plots.comparison)" alt="comparison plot" />
         </div>
         <div class="suggestions">
-          <h3>分析建议</h3>
+          <h3>{{ text.analysisAdvice }}</h3>
           <p v-for="item in analysisSuggestions" :key="item">{{ item }}</p>
-          <p>还可以把多个标签数据库同时与同一样品比较，做“来源贡献排序”；如果后续每个样品都有环境变量，可以把命中率和元素类别比例作为特征进入机器学习。</p>
+          <p>{{ text.extraAdvice }}</p>
         </div>
       </div>
     </section>
 
     <section v-if="dprResult" class="section card-glass">
-      <h2 class="section-title"><el-icon><DataAnalysis /></el-icon> DPR 数据库对比结果</h2>
+      <h2 class="section-title"><el-icon><DataAnalysis /></el-icon> {{ text.dprDbResult }}</h2>
       <div class="stats-row">
         <div class="stat-card">
           <span class="stat-val">{{ dprResult.fate_counts.D }}</span>
-          <span class="stat-lbl">D 消失组</span>
+          <span class="stat-lbl">D {{ text.disappearedGroup }}</span>
         </div>
         <div class="stat-card">
           <span class="stat-val">{{ dprResult.fate_counts.P }}</span>
-          <span class="stat-lbl">P 产生组</span>
+          <span class="stat-lbl">P {{ text.producedGroup }}</span>
         </div>
         <div class="stat-card">
           <span class="stat-val">{{ dprResult.fate_counts.R }}</span>
-          <span class="stat-lbl">R 背景组</span>
+          <span class="stat-lbl">R {{ text.resistantGroup }}</span>
         </div>
         <div class="stat-card">
           <span class="stat-val">{{ dprResult.core_removed }}</span>
-          <span class="stat-lbl">移除核心分子</span>
+          <span class="stat-lbl">{{ text.coreRemoved }}</span>
         </div>
       </div>
 
       <div class="download-row">
-        <el-button @click="downloadBase64(dprResult.downloads.D_csv_base64, 'D_disappearance.csv')">下载 D</el-button>
-        <el-button @click="downloadBase64(dprResult.downloads.P_csv_base64, 'P_product.csv')">下载 P</el-button>
-        <el-button @click="downloadBase64(dprResult.downloads.R_csv_base64, 'R_resistant.csv')">下载 R</el-button>
+        <el-button @click="downloadBase64(dprResult.downloads.D_csv_base64, 'D_disappearance.csv')">{{ text.download }} D</el-button>
+        <el-button @click="downloadBase64(dprResult.downloads.P_csv_base64, 'P_product.csv')">{{ text.download }} P</el-button>
+        <el-button @click="downloadBase64(dprResult.downloads.R_csv_base64, 'R_resistant.csv')">{{ text.download }} R</el-button>
       </div>
 
       <div class="result-grid">
         <div class="info-panel">
-          <h3>D/P/R 在数据库中的存在率</h3>
+          <h3>{{ text.dprPresence }}</h3>
           <el-table :data="dprPresenceRows" size="small">
-            <el-table-column prop="group" label="组别" width="90" />
-            <el-table-column prop="inSource" label="存在于数据库" />
-            <el-table-column prop="notInSource" label="不在数据库" />
-            <el-table-column prop="rate" label="存在率" />
+            <el-table-column prop="group" :label="text.group" width="90" />
+            <el-table-column prop="inSource" :label="text.inDatabase" />
+            <el-table-column prop="notInSource" :label="text.notInDatabase" />
+            <el-table-column prop="rate" :label="text.presenceRate" />
           </el-table>
         </div>
         <div class="info-panel">
-          <h3>卡方检验</h3>
+          <h3>{{ text.chiSquare }}</h3>
           <el-table :data="dprTestRows" size="small">
-            <el-table-column prop="name" label="比较" />
+            <el-table-column prop="name" :label="text.comparison" />
             <el-table-column prop="p" label="P-value" />
-            <el-table-column prop="result" label="结论" />
+            <el-table-column prop="result" :label="text.conclusion" />
           </el-table>
         </div>
       </div>
 
       <div class="plot-grid">
         <div class="plot-item">
-          <h3>3x2 总体热图</h3>
+          <h3>{{ text.overallHeatmap }}</h3>
           <img :src="plotSrc(dprResult.plots.overall_3x2)" alt="DPR 3x2 heatmap" />
           <div class="plot-downloads">
-            <el-button size="small" @click="downloadImageBase64(dprResult.plots.overall_3x2, 'DPR_3x2_heatmap.png')">下载 PNG</el-button>
-            <el-button v-if="dprResult.plot_pdfs?.overall_3x2" size="small" @click="downloadPdfBase64(dprResult.plot_pdfs.overall_3x2, 'DPR_3x2_heatmap.pdf')">下载 PDF</el-button>
+            <el-button size="small" @click="downloadImageBase64(dprResult.plots.overall_3x2, 'DPR_3x2_heatmap.png')">{{ text.download }} PNG</el-button>
+            <el-button v-if="dprResult.plot_pdfs?.overall_3x2" size="small" @click="downloadPdfBase64(dprResult.plot_pdfs.overall_3x2, 'DPR_3x2_heatmap.pdf')">{{ text.download }} PDF</el-button>
           </div>
         </div>
         <div class="plot-item">
           <h3>D vs R</h3>
           <img :src="plotSrc(dprResult.plots.d_vs_r)" alt="D vs R heatmap" />
           <div class="plot-downloads">
-            <el-button size="small" @click="downloadImageBase64(dprResult.plots.d_vs_r, 'D_vs_R_heatmap.png')">下载 PNG</el-button>
-            <el-button v-if="dprResult.plot_pdfs?.d_vs_r" size="small" @click="downloadPdfBase64(dprResult.plot_pdfs.d_vs_r, 'D_vs_R_heatmap.pdf')">下载 PDF</el-button>
+            <el-button size="small" @click="downloadImageBase64(dprResult.plots.d_vs_r, 'D_vs_R_heatmap.png')">{{ text.download }} PNG</el-button>
+            <el-button v-if="dprResult.plot_pdfs?.d_vs_r" size="small" @click="downloadPdfBase64(dprResult.plot_pdfs.d_vs_r, 'D_vs_R_heatmap.pdf')">{{ text.download }} PDF</el-button>
           </div>
         </div>
         <div class="plot-item">
           <h3>P vs D</h3>
           <img :src="plotSrc(dprResult.plots.p_vs_d)" alt="P vs D heatmap" />
           <div class="plot-downloads">
-            <el-button size="small" @click="downloadImageBase64(dprResult.plots.p_vs_d, 'P_vs_D_heatmap.png')">下载 PNG</el-button>
-            <el-button v-if="dprResult.plot_pdfs?.p_vs_d" size="small" @click="downloadPdfBase64(dprResult.plot_pdfs.p_vs_d, 'P_vs_D_heatmap.pdf')">下载 PDF</el-button>
+            <el-button size="small" @click="downloadImageBase64(dprResult.plots.p_vs_d, 'P_vs_D_heatmap.png')">{{ text.download }} PNG</el-button>
+            <el-button v-if="dprResult.plot_pdfs?.p_vs_d" size="small" @click="downloadPdfBase64(dprResult.plot_pdfs.p_vs_d, 'P_vs_D_heatmap.pdf')">{{ text.download }} PDF</el-button>
           </div>
         </div>
       </div>
@@ -290,6 +290,203 @@ const { lang } = useI18n()
 const pageText = computed(() => lang.value === 'zh'
   ? { title: '分子数据库', subtitle: '把任意数量的 CSV 文件归入一个标签，合并所有分子式和 Peak Height 强度，形成可复用的分子数据库。' }
   : { title: 'Molecular Database', subtitle: 'Merge any number of CSV files into a reusable molecular database with formulas and Peak Height intensities.' })
+const text = computed(() => lang.value === 'zh' ? {
+  createOrAppend: '创建或追加分子数据库',
+  writeMode: '写入方式',
+  writeNew: '新建/按标签写入',
+  writeAppend: '追加到已有数据库',
+  dbName: '标签/数据库名称',
+  dbNamePlaceholder: '例如：再生水、污水、上游背景',
+  existingDb: '已有数据库',
+  chooseAppendDb: '选择要追加的数据库',
+  description: '备注',
+  descriptionPlaceholder: '可填写来源说明、采样批次或点位信息',
+  chooseAnyCsv: '选择任意数量 CSV 文件',
+  emptyBuildFiles: '可一次选择 1 个或多个 CSV，列名支持 Molecular Formula / MolForm / Peak Height',
+  selectedFiles: '已选择',
+  files: '个文件',
+  writing: '写入中...',
+  createUpdateDb: '创建/更新数据库',
+  refreshDbs: '刷新数据库列表',
+  existingDatabases: '已有分子数据库',
+  dbLabel: '标签/数据库',
+  formulaCount: '分子数',
+  sourceFileCount: '来源文件数',
+  updatedAt: '更新时间',
+  sourceFiles: '来源文件',
+  actions: '操作',
+  downloadCsv: '下载 CSV',
+  delete: '删除',
+  sampleDbCompare: '样品与数据库对比',
+  chooseCompareDb: '选择用于对比的数据库',
+  chooseCompareCsv: '点击选择待对比样品 CSV',
+  compareCsvHelp: '需要包含 Molecular Formula 或 MolForm；Peak Height 会保留到导出结果中',
+  comparing: '对比中...',
+  startCompare: '开始对比',
+  twoFileDprCompare: '两文件 DPR 与数据库对比',
+  chooseSourceDb: '选择来源数据库',
+  chooseUpstream: '点击选择上游/前点位 CSV',
+  upstreamHelp: '用于和下游文件共同定义 D/P/R',
+  chooseDownstream: '点击选择下游/后点位 CSV',
+  downstreamHelp: 'D=上游有下游无，P=下游有上游无，R=两者都有',
+  removeCore: '移除核心分子',
+  analyzing: '分析中...',
+  startDprCompare: '开始 DPR 数据库对比',
+  lastWriteResult: '最近一次写入结果',
+  totalSourceFiles: '累计来源文件',
+  file: '文件',
+  formulasInFile: '文件内分子数',
+  newUnique: '新增唯一分子',
+  totalIntensity: '总强度',
+  compareResult: '对比结果',
+  hitFormulas: '命中分子',
+  sampleHitRate: '样品命中率',
+  download: '下载',
+  sourceSimilarity: '各来源文件相似度',
+  sourceFile: '来源文件',
+  hit: '命中',
+  sampleCoverage: '样品覆盖率',
+  elementDistribution: '元素类别分布',
+  class: '类别',
+  sampleDbSetRelation: '样品与数据库分子集合关系',
+  analysisAdvice: '分析建议',
+  extraAdvice: '还可以把多个标签数据库同时与同一样品比较，做“来源贡献排序”；如果后续每个样品都有环境变量，可以把命中率和元素类别比例作为特征进入机器学习。',
+  advice: [
+    '优先查看样品命中率和命中分子的元素类别分布，先判断样品是否明显接近某个来源数据库。',
+    '多个来源数据库之间建议批量计算样品命中率，并输出来源排序表，用于判断样品更接近哪类来源。',
+    '建议把 overlap、sample only、database only 分别导出，再进入 VK、DBE、NOSC 和机器学习模块比较类别差异。',
+  ],
+  dprDbResult: 'DPR 数据库对比结果',
+  disappearedGroup: '消失组',
+  producedGroup: '产生组',
+  resistantGroup: '背景组',
+  coreRemoved: '移除核心分子',
+  dprPresence: 'D/P/R 在数据库中的存在率',
+  group: '组别',
+  inDatabase: '存在于数据库',
+  notInDatabase: '不在数据库',
+  presenceRate: '存在率',
+  chiSquare: '卡方检验',
+  comparison: '比较',
+  conclusion: '结论',
+  overallHeatmap: '3x2 总体热图',
+  overallLabel: 'D/P/R 总体',
+  unavailable: '无法检验',
+  significant: '显著',
+  notSignificant: '不显著',
+  loadDbFailed: '加载数据库失败',
+  dbUpdated: '数据库已更新',
+  writeFailed: '写入失败',
+  compareComplete: '对比完成',
+  compareFailed: '对比失败',
+  dprComplete: 'DPR 数据库对比完成',
+  dprFailed: 'DPR 对比失败',
+  deleteDbConfirm: '确定删除数据库',
+  deleteDbSuffix: '该操作不可恢复。',
+  deleteConfirmTitle: '确认删除',
+  cancel: '取消',
+  dbDeleted: '数据库已删除',
+  deleteFailed: '删除失败',
+  locale: 'zh-CN',
+} : {
+  createOrAppend: 'Create or Append Molecular Database',
+  writeMode: 'Write mode',
+  writeNew: 'Create / write by label',
+  writeAppend: 'Append to existing database',
+  dbName: 'Label / database name',
+  dbNamePlaceholder: 'Example: reclaimed water, wastewater, upstream background',
+  existingDb: 'Existing database',
+  chooseAppendDb: 'Choose a database to append to',
+  description: 'Description',
+  descriptionPlaceholder: 'Source notes, sampling batch, or site information',
+  chooseAnyCsv: 'Choose any number of CSV files',
+  emptyBuildFiles: 'Choose one or more CSV files. Column names can be Molecular Formula / MolForm / Peak Height.',
+  selectedFiles: 'Selected',
+  files: 'files',
+  writing: 'Writing...',
+  createUpdateDb: 'Create / Update Database',
+  refreshDbs: 'Refresh Databases',
+  existingDatabases: 'Existing Molecular Databases',
+  dbLabel: 'Label / Database',
+  formulaCount: 'Formula Count',
+  sourceFileCount: 'Source Files',
+  updatedAt: 'Updated At',
+  sourceFiles: 'Source Files',
+  actions: 'Actions',
+  downloadCsv: 'Download CSV',
+  delete: 'Delete',
+  sampleDbCompare: 'Sample vs Database Comparison',
+  chooseCompareDb: 'Choose a database for comparison',
+  chooseCompareCsv: 'Click to choose sample CSV',
+  compareCsvHelp: 'Requires Molecular Formula or MolForm. Peak Height is retained in exported results.',
+  comparing: 'Comparing...',
+  startCompare: 'Start Comparison',
+  twoFileDprCompare: 'Two-File DPR vs Database Comparison',
+  chooseSourceDb: 'Choose source database',
+  chooseUpstream: 'Click to choose upstream / earlier-site CSV',
+  upstreamHelp: 'Used with the downstream file to define D/P/R',
+  chooseDownstream: 'Click to choose downstream / later-site CSV',
+  downstreamHelp: 'D=upstream only, P=downstream only, R=present in both',
+  removeCore: 'Remove core molecules',
+  analyzing: 'Analyzing...',
+  startDprCompare: 'Start DPR Database Comparison',
+  lastWriteResult: 'Latest Write Result',
+  totalSourceFiles: 'Total Source Files',
+  file: 'File',
+  formulasInFile: 'Formulas in File',
+  newUnique: 'New Unique Formulas',
+  totalIntensity: 'Total Intensity',
+  compareResult: 'Comparison Results',
+  hitFormulas: 'hit formulas',
+  sampleHitRate: 'Sample Hit Rate',
+  download: 'Download',
+  sourceSimilarity: 'Source File Similarity',
+  sourceFile: 'Source File',
+  hit: 'Hits',
+  sampleCoverage: 'Sample Coverage',
+  elementDistribution: 'Element Class Distribution',
+  class: 'Class',
+  sampleDbSetRelation: 'Sample and Database Formula Sets',
+  analysisAdvice: 'Analysis Advice',
+  extraAdvice: 'You can also compare multiple labeled databases against the same sample to rank source contribution. If environmental variables are available later, use hit rates and element class proportions as machine-learning features.',
+  advice: [
+    'Check the sample hit rate and the element distribution of hit formulas first to judge whether the sample is close to a source database.',
+    'For multiple source databases, batch-compute sample hit rates and export a source-ranking table.',
+    'Export overlap, sample only, and database only sets, then compare them in VK, DBE, NOSC, and machine-learning modules.',
+  ],
+  dprDbResult: 'DPR Database Comparison Results',
+  disappearedGroup: 'Disappeared group',
+  producedGroup: 'Produced group',
+  resistantGroup: 'Resistant group',
+  coreRemoved: 'Core molecules removed',
+  dprPresence: 'D/P/R Presence Rate in Database',
+  group: 'Group',
+  inDatabase: 'In Database',
+  notInDatabase: 'Not in Database',
+  presenceRate: 'Presence Rate',
+  chiSquare: 'Chi-Square Tests',
+  comparison: 'Comparison',
+  conclusion: 'Conclusion',
+  overallHeatmap: 'Overall 3x2 Heatmap',
+  overallLabel: 'Overall D/P/R',
+  unavailable: 'Unavailable',
+  significant: 'Significant',
+  notSignificant: 'Not significant',
+  loadDbFailed: 'Failed to load databases',
+  dbUpdated: 'Database updated',
+  writeFailed: 'Write failed',
+  compareComplete: 'Comparison complete',
+  compareFailed: 'Comparison failed',
+  dprComplete: 'DPR database comparison complete',
+  dprFailed: 'DPR comparison failed',
+  deleteDbConfirm: 'Delete database',
+  deleteDbSuffix: 'This cannot be undone.',
+  deleteConfirmTitle: 'Confirm Delete',
+  cancel: 'Cancel',
+  dbDeleted: 'Database deleted',
+  deleteFailed: 'Delete failed',
+  locale: 'en-US',
+})
 const buildInput = ref(null)
 const compareInput = ref(null)
 const dprUpstreamInput = ref(null)
@@ -299,7 +496,7 @@ const loadingDatabases = ref(false)
 const writeMode = ref('new')
 const selectedDatabaseId = ref('')
 const compareDatabaseId = ref('')
-const databaseName = ref('再生水')
+const databaseName = ref(lang.value === 'zh' ? '再生水' : 'Reclaimed Water')
 const description = ref('')
 const buildFiles = ref([])
 const compareFile = ref(null)
@@ -313,15 +510,11 @@ const dprRunning = ref(false)
 const buildResult = ref(null)
 const compareResult = ref(null)
 const dprResult = ref(null)
-const analysisSuggestions = [
-  '优先查看样品命中率和命中分子的元素类别分布，先判断样品是否明显接近某个来源数据库。',
-  '多个来源数据库之间建议批量计算样品命中率，并输出来源排序表，用于判断样品更接近哪类来源。',
-  '建议把 overlap、sample only、database only 分别导出，再进入 VK、DBE、NOSC 和机器学习模块比较类别差异。',
-]
+const analysisSuggestions = computed(() => text.value.advice)
 
 const buildFileLabel = computed(() => {
-  if (!buildFiles.value.length) return '可一次选择 1 个或多个 CSV，列名支持 Molecular Formula / MolForm / Peak Height'
-  return `已选择 ${buildFiles.value.length} 个文件`
+  if (!buildFiles.value.length) return text.value.emptyBuildFiles
+  return `${text.value.selectedFiles} ${buildFiles.value.length} ${text.value.files}`
 })
 
 const canBuild = computed(() => {
@@ -347,13 +540,13 @@ const dprPresenceRows = computed(() => {
 
 const dprTestRows = computed(() => {
   if (!dprResult.value) return []
-  const labels = { overall_3x2: 'D/P/R 总体', p_vs_d: 'P vs D', d_vs_r: 'D vs R' }
+  const labels = { overall_3x2: text.value.overallLabel, p_vs_d: 'P vs D', d_vs_r: 'D vs R' }
   return Object.entries(dprResult.value.tests).map(([key, test]) => {
     const p = test.p_value
     return {
       name: labels[key] || key,
       p: p == null ? 'N/A' : p.toFixed(5),
-      result: p == null ? '无法检验' : (p < 0.05 ? '显著' : '不显著'),
+      result: p == null ? text.value.unavailable : (p < 0.05 ? text.value.significant : text.value.notSignificant),
     }
   })
 })
@@ -371,7 +564,7 @@ function onDprFile(which, event) {
   if (which === 'upstream') dprUpstreamFile.value = file
   else dprDownstreamFile.value = file
 }
-function formatTime(t) { return t ? new Date(t).toLocaleString('zh-CN') : '-' }
+function formatTime(t) { return t ? new Date(t).toLocaleString(text.value.locale) : '-' }
 function plotSrc(base64) { return `data:image/png;base64,${base64}` }
 
 async function loadDatabases() {
@@ -382,7 +575,7 @@ async function loadDatabases() {
     if (!compareDatabaseId.value && databases.value.length) compareDatabaseId.value = databases.value[0].id
     if (!dprDatabaseId.value && databases.value.length) dprDatabaseId.value = databases.value[0].id
   } catch (e) {
-    ElMessage.error('加载数据库失败: ' + (e.response?.data?.detail || e.message))
+    ElMessage.error(`${text.value.loadDbFailed}: ` + (e.response?.data?.detail || e.message))
   } finally {
     loadingDatabases.value = false
   }
@@ -402,11 +595,11 @@ async function buildDatabase() {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 600000,
     })
-    ElMessage.success('数据库已更新')
+    ElMessage.success(text.value.dbUpdated)
     buildFiles.value = []
     await loadDatabases()
   } catch (e) {
-    ElMessage.error('写入失败: ' + (e.response?.data?.detail || e.message))
+    ElMessage.error(`${text.value.writeFailed}: ` + (e.response?.data?.detail || e.message))
   } finally {
     building.value = false
   }
@@ -424,9 +617,9 @@ async function compareDatabase() {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 600000,
     })
-    ElMessage.success('对比完成')
+    ElMessage.success(text.value.compareComplete)
   } catch (e) {
-    ElMessage.error('对比失败: ' + (e.response?.data?.detail || e.message))
+    ElMessage.error(`${text.value.compareFailed}: ` + (e.response?.data?.detail || e.message))
   } finally {
     comparing.value = false
   }
@@ -446,9 +639,9 @@ async function runDprDatabase() {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 600000,
     })
-    ElMessage.success('DPR 数据库对比完成')
+    ElMessage.success(text.value.dprComplete)
   } catch (e) {
-    ElMessage.error('DPR 对比失败: ' + (e.response?.data?.detail || e.message))
+    ElMessage.error(`${text.value.dprFailed}: ` + (e.response?.data?.detail || e.message))
   } finally {
     dprRunning.value = false
   }
@@ -461,12 +654,12 @@ function downloadDatabase(row) {
 async function deleteDatabase(row) {
   try {
     await ElMessageBox.confirm(
-      `确定删除数据库“${row.name}”？该操作不可恢复。`,
-      '确认删除',
+      `${text.value.deleteDbConfirm} "${row.name}"? ${text.value.deleteDbSuffix}`,
+      text.value.deleteConfirmTitle,
       {
         type: 'warning',
-        confirmButtonText: '删除',
-        cancelButtonText: '取消',
+        confirmButtonText: text.value.delete,
+        cancelButtonText: text.value.cancel,
         confirmButtonClass: 'el-button--danger',
       },
     )
@@ -474,11 +667,11 @@ async function deleteDatabase(row) {
     if (selectedDatabaseId.value === row.id) selectedDatabaseId.value = ''
     if (compareDatabaseId.value === row.id) compareDatabaseId.value = ''
     if (dprDatabaseId.value === row.id) dprDatabaseId.value = ''
-    ElMessage.success('数据库已删除')
+    ElMessage.success(text.value.dbDeleted)
     await loadDatabases()
   } catch (e) {
     if (e === 'cancel' || e === 'close') return
-    ElMessage.error('删除失败: ' + (e.response?.data?.detail || e.message))
+    ElMessage.error(`${text.value.deleteFailed}: ` + (e.response?.data?.detail || e.message))
   }
 }
 

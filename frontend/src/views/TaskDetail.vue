@@ -5,31 +5,31 @@
         <h1 class="page-title">{{ task?.filename || pageText.title }}</h1>
         <p class="page-subtitle">
           <el-tag :type="statusType" effect="dark" size="small">{{ statusLabel }}</el-tag>
-          <el-tag v-if="task?.task_type === 'dpr'" type="warning" effect="plain" size="small">DPR 对比</el-tag>
-          <el-tag v-else type="info" effect="plain" size="small">常规分析</el-tag>
-          <span v-if="task?.created_at" class="time-text">创建于 {{ formatTime(task.created_at) }}</span>
+          <el-tag v-if="task?.task_type === 'dpr'" type="warning" effect="plain" size="small">{{ text.dprCompare }}</el-tag>
+          <el-tag v-else type="info" effect="plain" size="small">{{ text.regularAnalysis }}</el-tag>
+          <span v-if="task?.created_at" class="time-text">{{ text.createdAt }} {{ formatTime(task.created_at) }}</span>
         </p>
       </div>
       <div class="header-actions">
         <el-button v-if="task?.status === 'success'" type="primary" @click="exportCSV">
-          <el-icon><Download /></el-icon> 导出 CSV
+          <el-icon><Download /></el-icon> {{ text.exportCsv }}
         </el-button>
         <el-button v-if="task?.status === 'success' && task?.task_type !== 'dpr'" @click="exportWeightedCSV">
-          <el-icon><Download /></el-icon> 加权平均表
+          <el-icon><Download /></el-icon> {{ text.weightedTable }}
         </el-button>
         <el-button type="danger" plain @click="handleDelete">
-          <el-icon><Delete /></el-icon> 删除
+          <el-icon><Delete /></el-icon> {{ text.delete }}
         </el-button>
       </div>
     </div>
 
     <!-- Running Progress -->
     <section v-if="task?.status === 'running' || task?.status === 'pending'" class="section card-glass">
-      <h2 class="section-title"><el-icon class="is-loading"><Loading /></el-icon> 分析进行中</h2>
+      <h2 class="section-title"><el-icon class="is-loading"><Loading /></el-icon> {{ text.analysisRunning }}</h2>
       <el-progress :percentage="task?.progress || 0" :stroke-width="14" :color="progressColors" :format="(p) => p.toFixed(0) + '%'" />
       <div class="current-step">
-        <span v-if="task?.current_step">当前步骤: {{ mapStepName(task.current_step) }}</span>
-        <span v-else>等待中...</span>
+        <span v-if="task?.current_step">{{ text.currentStep }}: {{ mapStepName(task.current_step) }}</span>
+        <span v-else>{{ text.waiting }}</span>
       </div>
       <div class="step-timeline" v-if="task?.task_type !== 'dpr'">
         <div v-for="(name, i) in stepNames" :key="i" class="timeline-item" :class="{ active: isCurrentStep(i), done: isDoneStep(i) }">
@@ -48,15 +48,15 @@
 
     <!-- DPR Result Table -->
     <section v-if="task?.status === 'success' && task?.task_type === 'dpr'" class="section card-glass">
-      <h2 class="section-title"><el-icon><Grid /></el-icon> DPR 对比结果 (前20行)</h2>
+      <h2 class="section-title"><el-icon><Grid /></el-icon> {{ text.dprResultTitle }}</h2>
       <el-table :data="dprTableData.slice(0, 20)" class="dark-table" stripe max-height="600">
-        <el-table-column prop="MolForm" label="分子式" min-width="150" />
-        <el-table-column prop="Col1" label="样本1" width="80" align="center" />
-        <el-table-column prop="Col2" label="样本2" width="80" align="center" />
-        <el-table-column prop="NewCol" label="DPR分类" width="100" align="center">
+        <el-table-column prop="MolForm" :label="text.formula" min-width="150" />
+        <el-table-column prop="Col1" :label="text.sample1" width="80" align="center" />
+        <el-table-column prop="Col2" :label="text.sample2" width="80" align="center" />
+        <el-table-column prop="NewCol" :label="text.dprClass" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="row.NewCol === 'R' ? 'success' : row.NewCol === 'D' ? 'danger' : 'primary'" size="small">
-              {{ row.NewCol === 'R' ? 'R (残留)' : row.NewCol === 'D' ? 'D (消失)' : row.NewCol === 'P' ? 'P (新增)' : '-' }}
+              {{ dprClassLabel(row.NewCol) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -68,7 +68,7 @@
         </el-table-column>
       </el-table>
       <div v-if="dprTableData.length > 20" class="table-tip">
-        <el-text type="info" size="small">共 {{ dprTableData.length }} 条，仅显示前20条。下载完整CSV获取全部数据。</el-text>
+        <el-text type="info" size="small">{{ text.tableTipPrefix }} {{ dprTableData.length }} {{ text.tableTipSuffix }}</el-text>
       </div>
     </section>
 
@@ -81,7 +81,7 @@
           <el-option label="SimSun" value="SimSun" />
         </el-select>
         <el-input-number v-model="chartFontSize" :min="8" :max="24" size="small" style="width:100px" @change="rerenderChart" />
-        <span class="toolbar-label">字体大小</span>
+        <span class="toolbar-label">{{ text.fontSize }}</span>
         <el-divider direction="vertical" />
         <el-button size="small" type="primary" @click="exportChartPDF"><el-icon><Document /></el-icon> PDF</el-button>
         <el-button size="small" @click="exportChartTIF"><el-icon><Picture /></el-icon> TIF</el-button>
@@ -97,17 +97,17 @@
         <span>≤ H/C ≤</span>
         <el-input-number v-model="vkParams.hcMax" :min="0" :max="3" :step="0.1" size="small" controls-position="right" />
         <el-divider direction="vertical" />
-        <span>散点大小</span>
+        <span>{{ text.dotSize }}</span>
         <el-input-number v-model="vkParams.dotSize" :min="1" :max="100" :step="1" size="small" controls-position="right" style="width:80px" />
         <el-divider direction="vertical" />
-        <el-checkbox v-model="vkParams.showLabels">类别标签</el-checkbox>
-        <el-checkbox v-model="vkParams.showBoundaries">边界框</el-checkbox>
-        <el-button size="small" type="primary" @click="rerenderChart">更新</el-button>
+        <el-checkbox v-model="vkParams.showLabels">{{ text.categoryLabels }}</el-checkbox>
+        <el-checkbox v-model="vkParams.showBoundaries">{{ text.boundaries }}</el-checkbox>
+        <el-button size="small" type="primary" @click="rerenderChart">{{ text.update }}</el-button>
       </div>
 
       <!-- Color customization for VK -->
       <div v-if="activeTab === 'vankrevelen'" class="vk-colors">
-        <span class="toolbar-label">元素分类颜色:</span>
+        <span class="toolbar-label">{{ text.elementColors }}:</span>
         <div v-for="(color, cat) in vkColors" :key="cat" class="color-item">
           <span class="color-label">{{ cat }}</span>
           <el-color-picker v-model="vkColors[cat]" size="small" @change="onColorChange" />
@@ -115,21 +115,21 @@
       </div>
 
       <el-tabs v-model="activeTab" type="border-card" class="detail-tabs">
-        <el-tab-pane label="质谱图" name="spectrum"><div ref="spectrumRef" class="chart-box" /></el-tab-pane>
-        <el-tab-pane label="初步搜索误差" name="preliminary"><div ref="preliminaryRef" class="chart-box" /></el-tab-pane>
+        <el-tab-pane :label="text.spectrum" name="spectrum"><div ref="spectrumRef" class="chart-box" /></el-tab-pane>
+        <el-tab-pane :label="text.prelimError" name="preliminary"><div ref="preliminaryRef" class="chart-box" /></el-tab-pane>
         <el-tab-pane label="Van Krevelen" name="vankrevelen">
           <div ref="vankrevelenRef" class="chart-box vk-preview">
             <img v-if="vkPreviewUrl" :src="vkPreviewUrl" alt="Van Krevelen" />
           </div>
         </el-tab-pane>
-        <el-tab-pane label="化合物分类" name="class"><div ref="classRef" class="chart-box" /></el-tab-pane>
-        <el-tab-pane label="加权平均指标" name="weighted"><div ref="weightedRef" class="chart-box" /></el-tab-pane>
+        <el-tab-pane :label="text.compoundClass" name="class"><div ref="classRef" class="chart-box" /></el-tab-pane>
+        <el-tab-pane :label="text.weightedMetrics" name="weighted"><div ref="weightedRef" class="chart-box" /></el-tab-pane>
       </el-tabs>
     </section>
 
     <!-- Steps Detail (only for regular analysis) -->
     <section v-if="task?.result?.steps && task?.task_type !== 'dpr'" class="section card-glass">
-      <h2 class="section-title">各步骤详情</h2>
+      <h2 class="section-title">{{ text.stepDetails }}</h2>
       <el-timeline>
         <el-timeline-item v-for="(step, key) in task.result.steps" :key="key" :type="step.status === 'success' ? 'success' : 'danger'" :timestamp="step.time ? step.time + 's' : ''" placement="top">
           <h4>{{ mapStepName(key) }}</h4>
@@ -154,6 +154,123 @@ const route = useRoute()
 const router = useRouter()
 const { lang } = useI18n()
 const pageText = computed(() => lang.value === 'zh' ? { title: '任务详情' } : { title: 'Task Detail' })
+const text = computed(() => lang.value === 'zh' ? {
+  dprCompare: 'DPR 对比',
+  regularAnalysis: '常规分析',
+  createdAt: '创建于',
+  exportCsv: '导出 CSV',
+  weightedTable: '加权平均表',
+  delete: '删除',
+  analysisRunning: '分析进行中',
+  currentStep: '当前步骤',
+  waiting: '等待中...',
+  dprResultTitle: 'DPR 对比结果 (前20行)',
+  formula: '分子式',
+  sample1: '样本1',
+  sample2: '样本2',
+  dprClass: 'DPR分类',
+  resistant: '残留',
+  disappeared: '消失',
+  product: '新增',
+  tableTipPrefix: '共',
+  tableTipSuffix: '条，仅显示前20条。下载完整 CSV 获取全部数据。',
+  fontSize: '字体大小',
+  dotSize: '散点大小',
+  categoryLabels: '类别标签',
+  boundaries: '边界框',
+  update: '更新',
+  elementColors: '元素分类颜色',
+  spectrum: '质谱图',
+  prelimError: '初步搜索误差',
+  compoundClass: '化合物分类',
+  weightedMetrics: '加权平均指标',
+  stepDetails: '各步骤详情',
+  success: '成功',
+  running: '运行中',
+  failed: '失败',
+  pending: '等待中',
+  peakDetection: '峰检测',
+  kendrickFilter: 'Kendrick 过滤',
+  prelimSearch: '初步搜索',
+  calibration: '质量校准',
+  fullSearch: '完整搜索',
+  indices: '指标计算',
+  nitrogenRule: '氮规则',
+  weightedAverage: '加权平均',
+  totalPeaks: '总峰数',
+  assigned: '已分配',
+  assignmentRate: '分配率',
+  totalTime: '总耗时',
+  totalPeakShort: '总峰',
+  filtered: '过滤后',
+  remaining: '剩余',
+  classes: '分类',
+  classUnit: '类',
+  metric: '指标',
+  weightedAverageValue: '加权平均值',
+  deleteConfirm: '确定删除此任务？',
+  confirm: '确认',
+  loadFailed: '加载失败',
+  locale: 'zh-CN',
+} : {
+  dprCompare: 'DPR Compare',
+  regularAnalysis: 'Regular Analysis',
+  createdAt: 'Created at',
+  exportCsv: 'Export CSV',
+  weightedTable: 'Weighted Average Table',
+  delete: 'Delete',
+  analysisRunning: 'Analysis Running',
+  currentStep: 'Current step',
+  waiting: 'Waiting...',
+  dprResultTitle: 'DPR Comparison Results (first 20 rows)',
+  formula: 'Formula',
+  sample1: 'Sample 1',
+  sample2: 'Sample 2',
+  dprClass: 'DPR class',
+  resistant: 'Resistant',
+  disappeared: 'Disappeared',
+  product: 'Product',
+  tableTipPrefix: 'Total',
+  tableTipSuffix: 'rows. Only the first 20 are shown. Download the full CSV for all data.',
+  fontSize: 'Font size',
+  dotSize: 'Dot size',
+  categoryLabels: 'Category labels',
+  boundaries: 'Boundaries',
+  update: 'Update',
+  elementColors: 'Element class colors',
+  spectrum: 'Mass Spectrum',
+  prelimError: 'Preliminary Search Error',
+  compoundClass: 'Compound Classification',
+  weightedMetrics: 'Weighted Metrics',
+  stepDetails: 'Step Details',
+  success: 'Success',
+  running: 'Running',
+  failed: 'Failed',
+  pending: 'Pending',
+  peakDetection: 'Peak Detection',
+  kendrickFilter: 'Kendrick Filter',
+  prelimSearch: 'Preliminary Search',
+  calibration: 'Calibration',
+  fullSearch: 'Full Search',
+  indices: 'Index Calculation',
+  nitrogenRule: 'Nitrogen Rule',
+  weightedAverage: 'Weighted Average',
+  totalPeaks: 'Total Peaks',
+  assigned: 'Assigned',
+  assignmentRate: 'Assignment Rate',
+  totalTime: 'Total Time',
+  totalPeakShort: 'Total peaks',
+  filtered: 'Filtered',
+  remaining: 'Remaining',
+  classes: 'Classes',
+  classUnit: 'classes',
+  metric: 'Metric',
+  weightedAverageValue: 'Weighted Average',
+  deleteConfirm: 'Delete this task?',
+  confirm: 'Confirm',
+  loadFailed: 'Load failed',
+  locale: 'en-US',
+})
 const taskId = route.params.id
 
 const task = ref(null)
@@ -179,12 +296,12 @@ let polling = null
 let chartData = {}
 let currentChart = null
 
-const stepNames = ['峰检测', 'Kendrick 过滤', '初步搜索', '质量校准', '完整搜索', '指标计算', '氮规则', '化合物分类', '加权平均']
+const stepNames = computed(() => [text.value.peakDetection, text.value.kendrickFilter, text.value.prelimSearch, text.value.calibration, text.value.fullSearch, text.value.indices, text.value.nitrogenRule, text.value.compoundClass, text.value.weightedAverage])
 const stepKeys = ['peak_detection', 'kendrick_filter', 'preliminary_search', 'calibration', 'full_search', 'indices_calc', 'nitrogen_rule', 'classification', 'weighted_avg']
 const progressColors = [{ color: '#3b82f6', percentage: 30 }, { color: '#06b6d4', percentage: 60 }, { color: '#10b981', percentage: 100 }]
 
 const statusType = computed(() => ({ success: 'success', running: 'warning', failed: 'danger', pending: 'info' })[task.value?.status] || 'info')
-const statusLabel = computed(() => ({ success: '成功', running: '运行中', failed: '失败', pending: '等待中' })[task.value?.status] || '-')
+const statusLabel = computed(() => ({ success: text.value.success, running: text.value.running, failed: text.value.failed, pending: text.value.pending })[task.value?.status] || '-')
 
 const isDprTask = computed(() => task.value?.task_type === 'dpr')
 
@@ -204,23 +321,26 @@ const summaryStats = computed(() => {
   if (!task.value?.result?.steps) return []
   const fs = task.value.result.steps.full_search?.data
   const items = []
-  if (fs) { items.push({ label: '总峰数', value: fs.total_peaks }, { label: '已分配', value: fs.assigned_peaks }, { label: '分配率', value: fs.assignment_rate + '%' }) }
-  items.push({ label: '总耗时', value: (task.value.result.total_time || 0).toFixed(1) + 's' })
+  if (fs) { items.push({ label: text.value.totalPeaks, value: fs.total_peaks }, { label: text.value.assigned, value: fs.assigned_peaks }, { label: text.value.assignmentRate, value: fs.assignment_rate + '%' }) }
+  items.push({ label: text.value.totalTime, value: (task.value.result.total_time || 0).toFixed(1) + 's' })
   return items
 })
 
-function formatTime(t) { return t ? new Date(t).toLocaleString('zh-CN') : '-' }
-function mapStepName(key) { return { peak_detection: '峰检测', kendrick_filter: 'Kendrick 过滤', preliminary_search: '初步搜索', calibration: '质量校准', full_search: '完整搜索', indices_calc: '指标计算', nitrogen_rule: '氮规则', classification: '化合物分类', weighted_avg: '加权平均' }[key] || key }
+function formatTime(t) { return t ? new Date(t).toLocaleString(text.value.locale) : '-' }
+function mapStepName(key) { return { peak_detection: text.value.peakDetection, kendrick_filter: text.value.kendrickFilter, preliminary_search: text.value.prelimSearch, calibration: text.value.calibration, full_search: text.value.fullSearch, indices_calc: text.value.indices, nitrogen_rule: text.value.nitrogenRule, classification: text.value.compoundClass, weighted_avg: text.value.weightedAverage }[key] || key }
+function dprClassLabel(value) {
+  return value === 'R' ? `R (${text.value.resistant})` : value === 'D' ? `D (${text.value.disappeared})` : value === 'P' ? `P (${text.value.product})` : '-'
+}
 function isCurrentStep(i) { return task.value?.current_step === stepKeys[i] }
 function isDoneStep(i) { return stepKeys.indexOf(task.value?.current_step) > i }
 function formatStepData(data) {
   if (!data) return ''
   const p = []
-  if (data.total_peaks !== undefined) p.push(`总峰: ${data.total_peaks}`)
-  if (data.filtered_peaks !== undefined) p.push(`过滤后: ${data.filtered_peaks}`)
-  if (data.assigned_peaks !== undefined) p.push(`已分配: ${data.assigned_peaks}`)
-  if (data.remaining_peaks !== undefined) p.push(`剩余: ${data.remaining_peaks}`)
-  if (data.type_counts) p.push(`分类: ${Object.keys(data.type_counts).length} 类`)
+  if (data.total_peaks !== undefined) p.push(`${text.value.totalPeakShort}: ${data.total_peaks}`)
+  if (data.filtered_peaks !== undefined) p.push(`${text.value.filtered}: ${data.filtered_peaks}`)
+  if (data.assigned_peaks !== undefined) p.push(`${text.value.assigned}: ${data.assigned_peaks}`)
+  if (data.remaining_peaks !== undefined) p.push(`${text.value.remaining}: ${data.remaining_peaks}`)
+  if (data.type_counts) p.push(`${text.value.classes}: ${Object.keys(data.type_counts).length} ${text.value.classUnit}`)
   return p.join(' | ')
 }
 
@@ -230,7 +350,7 @@ function exportCSV() {
 
 function exportWeightedCSV() {
   if (!weightedAvgs.value) return
-  const rows = [['指标', '加权平均值']]
+  const rows = [[text.value.metric, text.value.weightedAverageValue]]
   Object.entries(weightedAvgs.value).forEach(([k, v]) => { rows.push([k.replace('_w', ''), typeof v === 'number' ? v.toFixed(6) : '']) })
   const csv = rows.map(r => r.join(',')).join('\n')
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
@@ -241,7 +361,7 @@ function exportWeightedCSV() {
 }
 
 async function handleDelete() {
-  try { await ElMessageBox.confirm('确定删除此任务？', '确认', { type: 'warning' }); await deleteTask(taskId); router.push('/history') } catch {}
+  try { await ElMessageBox.confirm(text.value.deleteConfirm, text.value.confirm, { type: 'warning' }); await deleteTask(taskId); router.push('/history') } catch {}
 }
 
 function startPolling() {
@@ -272,7 +392,7 @@ async function loadFullDetail() {
         await nextTick(); renderChart(activeTab.value)
       }
     }
-  } catch (e) { ElMessage.error('加载失败: ' + e.message) }
+  } catch (e) { ElMessage.error(`${text.value.loadFailed}: ` + e.message) }
 }
 
 async function loadDprData() {
@@ -533,7 +653,7 @@ onMounted(async () => {
     task.value = await getTaskDetail(taskId)
     if (task.value?.status === 'running' || task.value?.status === 'pending') startPolling()
     else if (task.value?.status === 'success') await loadFullDetail()
-  } catch (e) { ElMessage.error('加载失败: ' + e.message) }
+  } catch (e) { ElMessage.error(`${text.value.loadFailed}: ` + e.message) }
   finally { loading.value = false }
 })
 onUnmounted(() => stopPolling())

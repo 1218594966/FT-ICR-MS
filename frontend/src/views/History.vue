@@ -4,72 +4,72 @@
     <p class="page-subtitle">{{ pageText.subtitle }}</p>
 
     <div class="filter-bar">
-      <el-select v-model="typeFilter" placeholder="任务类型" clearable style="width: 160px" @change="loadData">
-        <el-option label="全部类型" value="" />
-        <el-option label="常规分析" value="analysis" />
-        <el-option label="DPR 对比分析" value="dpr" />
+      <el-select v-model="typeFilter" :placeholder="text.taskType" clearable style="width: 160px" @change="loadData">
+        <el-option :label="text.allTypes" value="" />
+        <el-option :label="text.regularAnalysis" value="analysis" />
+        <el-option :label="text.dprAnalysis" value="dpr" />
       </el-select>
-      <el-select v-model="statusFilter" placeholder="状态筛选" clearable style="width: 140px" @change="loadData">
-        <el-option label="全部状态" value="" />
-        <el-option label="成功" value="success" />
-        <el-option label="运行中" value="running" />
-        <el-option label="失败" value="failed" />
-        <el-option label="等待中" value="pending" />
+      <el-select v-model="statusFilter" :placeholder="text.statusFilter" clearable style="width: 140px" @change="loadData">
+        <el-option :label="text.allStatuses" value="" />
+        <el-option :label="text.success" value="success" />
+        <el-option :label="text.running" value="running" />
+        <el-option :label="text.failed" value="failed" />
+        <el-option :label="text.pending" value="pending" />
       </el-select>
-      <el-input v-model="keyword" placeholder="搜索文件名..." clearable prefix-icon="Search" style="width: 260px" @clear="loadData" @keyup.enter="loadData" />
+      <el-input v-model="keyword" :placeholder="text.searchFilename" clearable prefix-icon="Search" style="width: 260px" @clear="loadData" @keyup.enter="loadData" />
       <div class="filter-spacer"></div>
       <input ref="importInput" class="hidden-file-input" type="file" accept=".csv" @change="handleImportCsv" />
       <el-button type="primary" :loading="importing" @click="triggerImport">
-        <el-icon><Upload /></el-icon> 导入常规分析CSV
+        <el-icon><Upload /></el-icon> {{ text.importCsv }}
       </el-button>
     </div>
 
     <el-table :data="tasks" class="dark-table" v-loading="loading" @row-click="goDetail" stripe>
-      <el-table-column prop="filename" label="文件名" min-width="220" show-overflow-tooltip />
-      <el-table-column label="类型" width="120">
+      <el-table-column prop="filename" :label="text.filename" min-width="220" show-overflow-tooltip />
+      <el-table-column :label="text.type" width="120">
         <template #default="{ row }">
           <el-tag :type="row.task_type === 'dpr' ? 'warning' : 'info'" size="small" effect="plain">
-            {{ row.task_type === 'dpr' ? 'DPR 对比' : '常规分析' }}
+            {{ row.task_type === 'dpr' ? text.dprCompare : text.regularAnalysis }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="status" label="状态" width="100">
+      <el-table-column prop="status" :label="text.status" width="100">
         <template #default="{ row }">
           <el-tag :type="statusType(row.status)" size="small" effect="dark">{{ statusLabel(row.status) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="progress" label="进度" width="130">
+      <el-table-column prop="progress" :label="text.progress" width="130">
         <template #default="{ row }">
           <el-progress :percentage="row.progress || 0" :stroke-width="6" :color="'#3b82f6'" />
         </template>
       </el-table-column>
-      <el-table-column prop="current_step" label="当前步骤" width="130">
+      <el-table-column prop="current_step" :label="text.currentStep" width="130">
         <template #default="{ row }">{{ row.current_step || '-' }}</template>
       </el-table-column>
-      <el-table-column prop="created_at" label="创建时间" width="180">
+      <el-table-column prop="created_at" :label="text.createdAt" width="180">
         <template #default="{ row }">{{ formatTime(row.created_at) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="280" fixed="right">
+      <el-table-column :label="text.actions" width="280" fixed="right">
         <template #default="{ row }">
           <el-button type="success" plain size="small" @click.stop="handleExport(row)" v-if="row.status === 'success'">
-            <el-icon><Download /></el-icon> 导出CSV
+            <el-icon><Download /></el-icon> {{ text.exportCsv }}
           </el-button>
           <el-button class="rename-btn" type="primary" size="small" @click.stop="handleRename(row)">
-            <el-icon><Edit /></el-icon> 重命名
+            <el-icon><Edit /></el-icon> {{ text.rename }}
           </el-button>
           <el-button type="danger" plain size="small" @click.stop="handleDelete(row)">
-            <el-icon><Delete /></el-icon> 删除
+            <el-icon><Delete /></el-icon> {{ text.delete }}
           </el-button>
         </template>
       </el-table-column>
     </el-table>
 
     <!-- Rename Dialog -->
-    <el-dialog v-model="renameDialogVisible" title="重命名" width="400">
-      <el-input v-model="newFilename" placeholder="请输入新文件名" @keyup.enter="confirmRename" />
+    <el-dialog v-model="renameDialogVisible" :title="text.rename" width="400">
+      <el-input v-model="newFilename" :placeholder="text.filenamePlaceholder" @keyup.enter="confirmRename" />
       <template #footer>
-        <el-button @click="renameDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="confirmRename">确定</el-button>
+        <el-button @click="renameDialogVisible = false">{{ text.cancel }}</el-button>
+        <el-button type="primary" @click="confirmRename">{{ text.confirm }}</el-button>
       </template>
     </el-dialog>
 
@@ -98,6 +98,83 @@ const { lang } = useI18n()
 const pageText = computed(() => lang.value === 'zh'
   ? { title: '历史记录', subtitle: '查看和管理所有分析任务。' }
   : { title: 'History', subtitle: 'View and manage all analysis tasks.' })
+const text = computed(() => lang.value === 'zh' ? {
+  taskType: '任务类型',
+  allTypes: '全部类型',
+  regularAnalysis: '常规分析',
+  dprAnalysis: 'DPR 对比分析',
+  dprCompare: 'DPR 对比',
+  statusFilter: '状态筛选',
+  allStatuses: '全部状态',
+  success: '成功',
+  running: '运行中',
+  failed: '失败',
+  pending: '等待中',
+  searchFilename: '搜索文件名...',
+  importCsv: '导入常规分析 CSV',
+  filename: '文件名',
+  type: '类型',
+  status: '状态',
+  progress: '进度',
+  currentStep: '当前步骤',
+  createdAt: '创建时间',
+  actions: '操作',
+  exportCsv: '导出 CSV',
+  rename: '重命名',
+  delete: '删除',
+  filenamePlaceholder: '请输入新文件名',
+  cancel: '取消',
+  confirm: '确定',
+  filenameRequired: '文件名不能为空',
+  renameSuccess: '重命名成功',
+  renameFailed: '重命名失败',
+  importComplete: '导入完成，已生成',
+  regularRows: '条常规分析结果',
+  importFailed: '导入失败',
+  deleteConfirmTitle: '确认',
+  deleteConfirm: '确定删除任务',
+  deleted: '已删除',
+  locale: 'zh-CN',
+  unknown: '未知错误',
+} : {
+  taskType: 'Task Type',
+  allTypes: 'All Types',
+  regularAnalysis: 'Regular Analysis',
+  dprAnalysis: 'DPR Comparison',
+  dprCompare: 'DPR Compare',
+  statusFilter: 'Status',
+  allStatuses: 'All Statuses',
+  success: 'Success',
+  running: 'Running',
+  failed: 'Failed',
+  pending: 'Pending',
+  searchFilename: 'Search filename...',
+  importCsv: 'Import Regular CSV',
+  filename: 'Filename',
+  type: 'Type',
+  status: 'Status',
+  progress: 'Progress',
+  currentStep: 'Current Step',
+  createdAt: 'Created At',
+  actions: 'Actions',
+  exportCsv: 'Export CSV',
+  rename: 'Rename',
+  delete: 'Delete',
+  filenamePlaceholder: 'Enter a new filename',
+  cancel: 'Cancel',
+  confirm: 'Confirm',
+  filenameRequired: 'Filename cannot be empty',
+  renameSuccess: 'Renamed successfully',
+  renameFailed: 'Rename failed',
+  importComplete: 'Import complete. Generated',
+  regularRows: 'regular-analysis rows',
+  importFailed: 'Import failed',
+  deleteConfirmTitle: 'Confirm',
+  deleteConfirm: 'Delete task',
+  deleted: 'Deleted',
+  locale: 'en-US',
+  unknown: 'Unknown error',
+})
 const tasks = ref([])
 const loading = ref(false)
 const page = ref(1)
@@ -116,9 +193,9 @@ function statusType(s) {
   return { success: 'success', running: 'warning', failed: 'danger', pending: 'info' }[s] || 'info'
 }
 function statusLabel(s) {
-  return { success: '成功', running: '运行中', failed: '失败', pending: '等待中' }[s] || s
+  return { success: text.value.success, running: text.value.running, failed: text.value.failed, pending: text.value.pending }[s] || s
 }
-function formatTime(t) { return t ? new Date(t).toLocaleString('zh-CN') : '-' }
+function formatTime(t) { return t ? new Date(t).toLocaleString(text.value.locale) : '-' }
 function goDetail(row) { router.push(`/task/${row.id}`) }
 
 function handleExport(row) {
@@ -133,16 +210,16 @@ function handleRename(row) {
 
 async function confirmRename() {
   if (!newFilename.value.trim()) {
-    ElMessage.warning('文件名不能为空')
+    ElMessage.warning(text.value.filenameRequired)
     return
   }
   try {
     await api.put(`/history/${currentTask.value.id}/rename`, { filename: newFilename.value.trim() })
-    ElMessage.success('重命名成功')
+    ElMessage.success(text.value.renameSuccess)
     renameDialogVisible.value = false
     loadData()
   } catch (e) {
-    ElMessage.error('重命名失败: ' + (e.response?.data?.detail || e.message))
+    ElMessage.error(`${text.value.renameFailed}: ` + (e.response?.data?.detail || e.message))
   }
 }
 
@@ -180,9 +257,9 @@ async function handleImportCsv(event) {
     statusFilter.value = 'success'
     page.value = 1
     await loadData()
-    ElMessage.success(`导入完成，已生成 ${res.rows || 0} 条常规分析结果`)
+    ElMessage.success(`${text.value.importComplete} ${res.rows || 0} ${text.value.regularRows}`)
   } catch (e) {
-    ElMessage.error('导入失败: ' + (e.message || '未知错误'))
+    ElMessage.error(`${text.value.importFailed}: ` + (e.message || text.value.unknown))
   } finally {
     importing.value = false
     event.target.value = ''
@@ -191,9 +268,9 @@ async function handleImportCsv(event) {
 
 async function handleDelete(row) {
   try {
-    await ElMessageBox.confirm(`确定删除任务 "${row.filename}"？`, '确认', { type: 'warning' })
+    await ElMessageBox.confirm(`${text.value.deleteConfirm} "${row.filename}"?`, text.value.deleteConfirmTitle, { type: 'warning' })
     await deleteTask(row.id)
-    ElMessage.success('已删除')
+    ElMessage.success(text.value.deleted)
     loadData()
   } catch {}
 }

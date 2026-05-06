@@ -7,16 +7,16 @@
       </div>
       <div v-if="result?.success" class="head-actions">
         <el-button type="primary" @click="download(result.pdf_zip_url)">
-          <el-icon><Document /></el-icon> 下载全部 PDF
+          <el-icon><Document /></el-icon> {{ text.downloadAllPdf }}
         </el-button>
         <el-button @click="download(result.weighted_excel_url)">
-          <el-icon><Download /></el-icon> 下载加权平均 Excel
+          <el-icon><Download /></el-icon> {{ text.downloadWeightedExcel }}
         </el-button>
       </div>
     </div>
 
     <section class="section card-glass">
-      <h2 class="section-title"><el-icon><Upload /></el-icon> 上传常规分析 CSV</h2>
+      <h2 class="section-title"><el-icon><Upload /></el-icon> {{ text.uploadRegularCsv }}</h2>
       <el-upload
         v-model:file-list="fileList"
         class="batch-upload"
@@ -27,17 +27,17 @@
         :disabled="processing"
       >
         <el-icon class="upload-icon"><UploadFilled /></el-icon>
-        <div class="el-upload__text">拖拽多个 CSV 到这里，或点击选择文件</div>
+        <div class="el-upload__text">{{ text.dragCsv }}</div>
         <template #tip>
           <div class="upload-tip">
-            支持常规分析导出的结果 CSV，也支持少量缺失派生列的常规 CSV；系统会自动补齐指标并按常规过滤规则处理。
+            {{ text.uploadTip }}
           </div>
         </template>
       </el-upload>
       <div class="element-panel">
         <div>
-          <h3>元素分类参与元素</h3>
-          <p>基础类别始终包含 C/H/O；勾选的元素会参与 VK 图例分类。比如勾选 P 后，含磷分子会进入 CHOP、CHONP、CHOPS、CHONPS 等类别。</p>
+          <h3>{{ text.elementTitle }}</h3>
+          <p>{{ text.elementHelp }}</p>
         </div>
         <el-checkbox-group v-model="selectedElements" :disabled="processing">
           <el-checkbox-button v-for="elem in elementOptions" :key="elem" :label="elem" :value="elem" />
@@ -45,8 +45,8 @@
       </div>
       <div class="color-panel">
         <div class="color-head">
-          <h3>元素类别颜色</h3>
-          <p>网页预览和导出的 PDF 会使用同一套颜色。含 P 的 CHOP、CHONP、CHOPS、CHONPS 也可以单独设置。</p>
+          <h3>{{ text.colorTitle }}</h3>
+          <p>{{ text.colorHelp }}</p>
         </div>
         <div class="color-grid">
           <div v-for="cat in visibleColorCategories" :key="cat" class="color-item">
@@ -58,15 +58,15 @@
       </div>
       <div v-if="fileList.length" class="label-panel">
         <div class="color-head">
-          <h3>图标签</h3>
-          <p>每个文件可单独设置一个显示在 VK 图左上角的标签。留空则图中不显示标签。</p>
+          <h3>{{ text.figureLabels }}</h3>
+          <p>{{ text.figureLabelsHelp }}</p>
         </div>
         <div class="label-list">
           <div v-for="file in fileList" :key="file.uid" class="label-row">
             <span class="file-name">{{ file.name }}</span>
             <el-input
               v-model="file.figureLabel"
-              placeholder="例如 S1、O1、汛期-上游"
+              :placeholder="text.figureLabelPlaceholder"
               clearable
               :disabled="processing"
             />
@@ -75,19 +75,19 @@
       </div>
       <div class="upload-actions">
         <el-button type="primary" size="large" :loading="processing" :disabled="!fileList.length" @click="runBatch">
-          开始批量处理
+          {{ text.startBatch }}
         </el-button>
-        <el-button :disabled="processing || !fileList.length" @click="fileList = []">清空列表</el-button>
+        <el-button :disabled="processing || !fileList.length" @click="fileList = []">{{ text.clearList }}</el-button>
       </div>
     </section>
 
     <section v-if="result" class="section card-glass">
       <div class="result-title-row">
-        <h2 class="section-title">处理结果</h2>
+        <h2 class="section-title">{{ text.results }}</h2>
         <div class="summary">
-          <el-tag type="success" effect="dark">成功 {{ result.success }}</el-tag>
-          <el-tag v-if="result.failed" type="danger" effect="dark">失败 {{ result.failed }}</el-tag>
-          <el-tag type="info" effect="plain">总计 {{ result.total }}</el-tag>
+          <el-tag type="success" effect="dark">{{ text.success }} {{ result.success }}</el-tag>
+          <el-tag v-if="result.failed" type="danger" effect="dark">{{ text.failed }} {{ result.failed }}</el-tag>
+          <el-tag type="info" effect="plain">{{ text.total }} {{ result.total }}</el-tag>
         </div>
       </div>
 
@@ -96,15 +96,15 @@
           <div class="item-head">
             <div>
               <h3>{{ item.filename }}</h3>
-              <p v-if="item.status === 'success'">{{ item.rows }} 个分子 | 分配率 {{ formatRate(item.assignment_rate) }}%</p>
+              <p v-if="item.status === 'success'">{{ item.rows }} {{ text.molecules }} | {{ text.assignmentRate }} {{ formatRate(item.assignment_rate) }}%</p>
               <p v-else class="error-text">{{ item.error }}</p>
             </div>
             <el-tag :type="item.status === 'success' ? 'success' : 'danger'" effect="dark">
-              {{ item.status === 'success' ? '成功' : '失败' }}
+              {{ item.status === 'success' ? text.success : text.failed }}
             </el-tag>
           </div>
           <div v-if="item.status === 'success'" class="vk-box">
-            <img :src="item.preview_url" :alt="item.filename + ' VK 图'" />
+            <img :src="item.preview_url" :alt="item.filename + ' VK plot'" />
           </div>
           <div v-if="item.status === 'success'" class="item-actions">
             <el-button size="small" type="primary" @click="download(item.pdf_url)">
@@ -127,6 +127,59 @@ const { lang } = useI18n()
 const pageText = computed(() => lang.value === 'zh'
   ? { title: '批量处理', subtitle: '批量上传常规分析 CSV，统一生成 Van Krevelen 图、PDF 和加权平均指标表。' }
   : { title: 'Batch Processing', subtitle: 'Batch upload regular-analysis CSV files and export Van Krevelen plots, PDFs, and weighted-average tables.' })
+const text = computed(() => lang.value === 'zh' ? {
+  downloadAllPdf: '下载全部 PDF',
+  downloadWeightedExcel: '下载加权平均 Excel',
+  uploadRegularCsv: '上传常规分析 CSV',
+  dragCsv: '拖拽多个 CSV 到这里，或点击选择文件',
+  uploadTip: '支持常规分析导出的结果 CSV，也支持少量缺失派生列的常规 CSV；系统会自动补齐指标并按常规过滤规则处理。',
+  elementTitle: '元素分类参与元素',
+  elementHelp: '基础类别始终包含 C/H/O；勾选的元素会参与 VK 图例分类。比如勾选 P 后，含磷分子会进入 CHOP、CHONP、CHOPS、CHONPS 等类别。',
+  colorTitle: '元素类别颜色',
+  colorHelp: '网页预览和导出的 PDF 会使用同一套颜色。含 P 的 CHOP、CHONP、CHOPS、CHONPS 也可以单独设置。',
+  figureLabels: '图标签',
+  figureLabelsHelp: '每个文件可单独设置一个显示在 VK 图左上角的标签。留空则图中不显示标签。',
+  figureLabelPlaceholder: '例如 S1、O1、汛期-上游',
+  startBatch: '开始批量处理',
+  clearList: '清空列表',
+  results: '处理结果',
+  success: '成功',
+  failed: '失败',
+  total: '总计',
+  molecules: '个分子',
+  assignmentRate: '分配率',
+  chooseCsv: '请先选择 CSV 文件',
+  completePrefix: '批量处理完成',
+  noneSucceeded: '没有文件处理成功，请检查 CSV 格式',
+  batchFailed: '批量处理失败',
+  unknown: '未知错误',
+} : {
+  downloadAllPdf: 'Download all PDFs',
+  downloadWeightedExcel: 'Download weighted-average Excel',
+  uploadRegularCsv: 'Upload Regular-Analysis CSV',
+  dragCsv: 'Drag CSV files here, or click to choose files',
+  uploadTip: 'Supports regular-analysis result CSV files and regular CSV files missing some derived columns. Metrics and standard filters will be applied automatically.',
+  elementTitle: 'Elements Included in Class Labels',
+  elementHelp: 'C/H/O are always included. Checked elements participate in VK legend classes. For example, enabling P classifies phosphorus molecules into CHOP, CHONP, CHOPS, CHONPS, and related classes.',
+  colorTitle: 'Element Class Colors',
+  colorHelp: 'The preview and exported PDF use the same colors. P-containing classes such as CHOP, CHONP, CHOPS, and CHONPS can also be customized.',
+  figureLabels: 'Figure Labels',
+  figureLabelsHelp: 'Set a separate label for each VK plot. Leave blank to hide the label.',
+  figureLabelPlaceholder: 'Example: S1, O1, wet-season upstream',
+  startBatch: 'Start Batch Processing',
+  clearList: 'Clear List',
+  results: 'Results',
+  success: 'Success',
+  failed: 'Failed',
+  total: 'Total',
+  molecules: 'molecules',
+  assignmentRate: 'assignment rate',
+  chooseCsv: 'Choose CSV files first',
+  completePrefix: 'Batch processing complete',
+  noneSucceeded: 'No files were processed successfully. Check the CSV format.',
+  batchFailed: 'Batch processing failed',
+  unknown: 'Unknown error',
+})
 const fileList = ref([])
 const processing = ref(false)
 const result = ref(null)
@@ -173,7 +226,7 @@ function formatRate(rate) {
 
 async function runBatch() {
   if (!fileList.value.length) {
-    ElMessage.warning('请先选择 CSV 文件')
+    ElMessage.warning(text.value.chooseCsv)
     return
   }
   const form = new FormData()
@@ -192,12 +245,12 @@ async function runBatch() {
     })
     result.value = data
     if (data.success) {
-      ElMessage.success(`批量处理完成：成功 ${data.success} 个，失败 ${data.failed} 个`)
+      ElMessage.success(`${text.value.completePrefix}: ${text.value.success} ${data.success}, ${text.value.failed} ${data.failed}`)
     } else {
-      ElMessage.error('没有文件处理成功，请检查 CSV 格式')
+      ElMessage.error(text.value.noneSucceeded)
     }
   } catch (e) {
-    ElMessage.error('批量处理失败: ' + (e.message || '未知错误'))
+    ElMessage.error(`${text.value.batchFailed}: ` + (e.message || text.value.unknown))
   } finally {
     processing.value = false
   }

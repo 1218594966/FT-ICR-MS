@@ -5,14 +5,14 @@
 
     <!-- Step 1: File Upload -->
     <section class="section card-glass">
-      <h2 class="section-title"><el-icon><Upload /></el-icon> 数据文件上传</h2>
+      <h2 class="section-title"><el-icon><Upload /></el-icon> {{ text.fileUpload }}</h2>
 
       <div class="upload-tabs">
         <div :class="['tab-btn', { active: uploadMode === 'folder' }]" @click="uploadMode = 'folder'">
-          <el-icon><FolderOpened /></el-icon> 文件夹上传
+          <el-icon><FolderOpened /></el-icon> {{ text.folderUpload }}
         </div>
         <div :class="['tab-btn', { active: uploadMode === 'zip' }]" @click="uploadMode = 'zip'">
-          <el-icon><Document /></el-icon> ZIP 上传
+          <el-icon><Document /></el-icon> {{ text.zipUpload }}
         </div>
       </div>
 
@@ -20,22 +20,22 @@
       <div v-if="uploadMode === 'folder'" class="upload-dropzone" @click="triggerFolderInput" @dragover.prevent @drop.prevent="handleFolderDrop">
         <input ref="folderInputRef" type="file" webkitdirectory mozdirectory multiple style="display:none" @change="handleFolderSelect" />
         <el-icon class="upload-icon"><FolderOpened /></el-icon>
-        <div class="upload-text">点击选择 <strong>.d 文件夹</strong>，支持多次选择添加多个文件</div>
-        <div class="upload-tip">直接选择 Bruker .d 文件夹，可添加多个后按顺序分析</div>
+        <div class="upload-text" v-html="text.folderDropText"></div>
+        <div class="upload-tip">{{ text.folderDropTip }}</div>
       </div>
 
       <!-- ZIP upload mode -->
       <div v-else class="upload-dropzone" @click="triggerZipInput" @dragover.prevent @drop.prevent="handleZipDrop">
         <input ref="zipInputRef" type="file" accept=".zip" multiple style="display:none" @change="handleZipSelect" />
         <el-icon class="upload-icon"><Document /></el-icon>
-        <div class="upload-text">点击选择 <strong>.zip 文件</strong>，支持多选</div>
-        <div class="upload-tip">将 .d 文件夹压缩为 .zip 后上传</div>
+        <div class="upload-text" v-html="text.zipDropText"></div>
+        <div class="upload-tip">{{ text.zipDropTip }}</div>
       </div>
 
       <!-- Upload progress -->
       <div v-if="uploading" class="upload-progress">
         <el-icon class="is-loading"><Loading /></el-icon>
-        <span>正在上传 {{ uploadProgress }}% ...</span>
+        <span>{{ text.uploading }} {{ uploadProgress }}% ...</span>
         <el-progress :percentage="uploadProgress" :stroke-width="4" :show-text="false" style="flex:1" />
       </div>
 
@@ -45,9 +45,9 @@
           <el-icon color="#10b981"><CircleCheck /></el-icon>
           <span class="success-name">{{ f.filename }}</span>
           <span class="success-size" v-if="f.size">{{ formatSize(f.size) }}</span>
-          <span class="success-size" v-if="f.file_count">{{ f.file_count }} 个文件</span>
+          <span class="success-size" v-if="f.file_count">{{ f.file_count }} {{ text.files }}</span>
           <el-tag v-if="f.taskStatus" :type="f.taskStatus === 'success' ? 'success' : f.taskStatus === 'running' ? 'warning' : 'info'" size="small" effect="dark" style="margin-left:8px">
-            {{ { success: '成功', running: '运行中', failed: '失败', pending: '等待中' }[f.taskStatus] || f.taskStatus }}
+            {{ statusLabel(f.taskStatus) }}
           </el-tag>
           <el-button text type="danger" size="small" @click="removeUpload(i)" style="margin-left:auto">
             <el-icon><Delete /></el-icon>
@@ -58,24 +58,24 @@
 
     <!-- Step 2: Parameters -->
     <section class="section card-glass">
-      <h2 class="section-title"><el-icon><Setting /></el-icon> 分析参数配置</h2>
+      <h2 class="section-title"><el-icon><Setting /></el-icon> {{ text.parameters }}</h2>
 
       <el-collapse v-model="activePanels">
         <!-- Peak Detection -->
-        <el-collapse-item title="峰检测参数" name="peak">
+        <el-collapse-item :title="text.peakParams" name="peak">
           <div class="param-grid">
             <div class="param-item">
-              <label>峰最小突出度 (%)</label>
+              <label>{{ text.peakProminence }}</label>
               <el-input-number v-model="params.peak_detection.peak_min_prominence_percent" :min="0" :max="1" :step="0.001" :precision="3" />
             </div>
           </div>
         </el-collapse-item>
 
         <!-- Calibration -->
-        <el-collapse-item title="校准参数" name="calibration">
+        <el-collapse-item :title="text.calibrationParams" name="calibration">
           <div class="param-grid">
             <div class="param-item">
-              <label>m/z 范围</label>
+              <label>{{ text.mzRange }}</label>
               <div class="range-inputs">
                 <el-input-number v-model="params.calibration.min_noise_mz" :min="0" :max="10000" />
                 <span>~</span>
@@ -83,7 +83,7 @@
               </div>
             </div>
             <div class="param-item">
-              <label>ppm 误差范围</label>
+              <label>{{ text.ppmRange }}</label>
               <div class="range-inputs">
                 <el-input-number v-model="params.calibration.min_calib_ppm_error" :min="-10" :max="10" :step="0.1" />
                 <span>~</span>
@@ -94,10 +94,10 @@
         </el-collapse-item>
 
         <!-- Preliminary Search -->
-        <el-collapse-item title="初步分子式搜索参数" name="prelim">
+        <el-collapse-item :title="text.prelimParams" name="prelim">
           <div class="param-grid">
             <div class="param-item" v-for="elem in ['C', 'H', 'O']" :key="'pre_'+elem">
-              <label>{{ elem }} 原子范围</label>
+              <label>{{ elem }} {{ text.atomRange }}</label>
               <div class="range-inputs">
                 <el-input-number v-model="params.preliminary_search.used_atoms[elem][0]" :min="0" :max="200" size="small" />
                 <span>~</span>
@@ -105,7 +105,7 @@
               </div>
             </div>
             <div class="param-item">
-              <label>ppm 误差范围</label>
+              <label>{{ text.ppmRange }}</label>
               <div class="range-inputs">
                 <el-input-number v-model="params.preliminary_search.min_ppm_error" :min="-50" :max="0" :step="0.5" />
                 <span>~</span>
@@ -116,10 +116,10 @@
         </el-collapse-item>
 
         <!-- Full Search -->
-        <el-collapse-item title="完整分子式搜索参数" name="full">
+        <el-collapse-item :title="text.fullParams" name="full">
           <div class="param-grid">
             <div class="param-item" v-for="elem in allElements" :key="'full_'+elem">
-              <label>{{ elem }} 原子范围</label>
+              <label>{{ elem }} {{ text.atomRange }}</label>
               <div class="range-inputs">
                 <el-input-number v-model="params.full_search.used_atoms[elem][0]" :min="0" :max="200" size="small" />
                 <span>~</span>
@@ -127,7 +127,7 @@
               </div>
             </div>
             <div class="param-item">
-              <label>ppm 误差范围</label>
+              <label>{{ text.ppmRange }}</label>
               <div class="range-inputs">
                 <el-input-number v-model="params.full_search.min_ppm_error" :min="-50" :max="0" :step="0.1" />
                 <span>~</span>
@@ -135,7 +135,7 @@
               </div>
             </div>
             <div class="param-item">
-              <label>H/C 范围</label>
+              <label>{{ text.hcRange }}</label>
               <div class="range-inputs">
                 <el-input-number v-model="params.full_search.min_hc" :min="0" :max="5" :step="0.05" />
                 <span>~</span>
@@ -143,7 +143,7 @@
               </div>
             </div>
             <div class="param-item">
-              <label>O/C 范围</label>
+              <label>{{ text.ocRange }}</label>
               <div class="range-inputs">
                 <el-input-number v-model="params.full_search.min_oc" :min="0" :max="5" :step="0.05" />
                 <span>~</span>
@@ -156,12 +156,12 @@
 
       <div class="param-actions">
         <el-button @click="resetParams">
-          <el-icon><RefreshLeft /></el-icon> 恢复默认参数
+          <el-icon><RefreshLeft /></el-icon> {{ text.resetParams }}
         </el-button>
         <el-button type="primary" size="large" :disabled="!uploadedFiles.length || running" @click="startAnalysis">
           <el-icon v-if="!running"><CaretRight /></el-icon>
           <el-icon v-else class="is-loading"><Loading /></el-icon>
-          {{ running ? '分析中...' : '开始分析' }}
+          {{ running ? text.running : text.startAnalysis }}
         </el-button>
       </div>
     </section>
@@ -169,7 +169,7 @@
     <!-- Step 3: Progress -->
     <transition name="slide">
       <section v-if="running || taskResult" class="section card-glass">
-        <h2 class="section-title"><el-icon><TrendCharts /></el-icon> 分析进度</h2>
+        <h2 class="section-title"><el-icon><TrendCharts /></el-icon> {{ text.progress }}</h2>
         <div class="progress-section">
           <el-progress
             :percentage="progress"
@@ -183,10 +183,10 @@
               {{ currentStepName }} ...
             </span>
             <span v-else-if="taskResult?.status === 'success'" class="step-done">
-              <el-icon color="#10b981"><CircleCheck /></el-icon> 分析完成
+              <el-icon color="#10b981"><CircleCheck /></el-icon> {{ text.analysisComplete }}
             </span>
             <span v-else-if="taskResult?.status === 'failed'" class="step-fail">
-              <el-icon color="#ef4444"><CircleClose /></el-icon> 分析失败
+              <el-icon color="#ef4444"><CircleClose /></el-icon> {{ text.analysisFailed }}
             </span>
           </div>
           <div class="step-timeline" v-if="stepNames.length">
@@ -207,7 +207,7 @@
     <!-- Step 4: Results Preview -->
     <transition name="slide">
       <section v-if="taskResult?.status === 'success'" class="section card-glass">
-        <h2 class="section-title"><el-icon><DataLine /></el-icon> 分析结果预览</h2>
+        <h2 class="section-title"><el-icon><DataLine /></el-icon> {{ text.preview }}</h2>
 
         <div class="result-summary">
           <div class="summary-item" v-for="item in summaryItems" :key="item.label">
@@ -217,23 +217,23 @@
         </div>
 
         <el-tabs v-model="activeChart" type="border-card">
-          <el-tab-pane label="质谱图" name="spectrum">
+          <el-tab-pane :label="text.spectrum" name="spectrum">
             <div ref="spectrumChart" class="chart-container" />
           </el-tab-pane>
-          <el-tab-pane label="m/z vs ppm 误差" name="error">
+          <el-tab-pane :label="text.errorPlot" name="error">
             <div ref="errorChart" class="chart-container" />
           </el-tab-pane>
-          <el-tab-pane label="化合物分类" name="classification">
+          <el-tab-pane :label="text.classification" name="classification">
             <div ref="classChart" class="chart-container" />
           </el-tab-pane>
         </el-tabs>
 
         <div class="result-actions">
           <el-button type="primary" size="large" @click="exportCSV">
-            <el-icon><Download /></el-icon> 导出 CSV
+            <el-icon><Download /></el-icon> {{ text.exportCsv }}
           </el-button>
           <el-button size="large" @click="$router.push(`/task/${taskId}`)">
-            <el-icon><View /></el-icon> 查看完整报告
+            <el-icon><View /></el-icon> {{ text.viewReport }}
           </el-button>
         </div>
       </section>
@@ -252,12 +252,125 @@ const { lang } = useI18n()
 const pageText = computed(() => lang.value === 'zh'
   ? { title: '新建分析', subtitle: '上传 FT-ICR MS 数据文件，配置分析参数，一键开始分析' }
   : { title: 'New Analysis', subtitle: 'Upload FT-ICR MS data, configure parameters, and start analysis.' })
+const text = computed(() => lang.value === 'zh' ? {
+  fileUpload: '数据文件上传',
+  folderUpload: '文件夹上传',
+  zipUpload: 'ZIP 上传',
+  folderDropText: '点击选择 <strong>.d 文件夹</strong>，支持多次选择添加多个文件',
+  folderDropTip: '直接选择 Bruker .d 文件夹，可添加多个后按顺序分析',
+  zipDropText: '点击选择 <strong>.zip 文件</strong>，支持多选',
+  zipDropTip: '将 .d 文件夹压缩为 .zip 后上传',
+  uploading: '正在上传',
+  files: '个文件',
+  parameters: '分析参数配置',
+  peakParams: '峰检测参数',
+  peakProminence: '峰最小突出度 (%)',
+  calibrationParams: '校准参数',
+  mzRange: 'm/z 范围',
+  ppmRange: 'ppm 误差范围',
+  prelimParams: '初步分子式搜索参数',
+  fullParams: '完整分子式搜索参数',
+  atomRange: '原子范围',
+  hcRange: 'H/C 范围',
+  ocRange: 'O/C 范围',
+  resetParams: '恢复默认参数',
+  startAnalysis: '开始分析',
+  running: '分析中...',
+  progress: '分析进度',
+  peakDetection: '峰检测',
+  kendrickFilter: 'Kendrick 过滤',
+  prelimSearch: '初步搜索',
+  calibration: '质量校准',
+  fullSearch: '完整搜索',
+  indices: '指标计算',
+  nitrogenRule: '氮规则',
+  weightedAverage: '加权平均',
+  analysisComplete: '分析完成',
+  analysisFailed: '分析失败',
+  preview: '分析结果预览',
+  spectrum: '质谱图',
+  errorPlot: 'm/z vs ppm 误差',
+  classification: '化合物分类',
+  exportCsv: '导出 CSV',
+  viewReport: '查看完整报告',
+  statusSuccess: '成功',
+  statusRunning: '运行中',
+  statusFailed: '失败',
+  statusPending: '等待中',
+  chooseFolder: '请点击按钮选择 .d 文件夹',
+  uploadSuccess: '上传成功',
+  uploadFailed: '上传失败',
+  notZip: '不是 .zip 文件',
+  resetDone: '参数已恢复默认值',
+  uploadFirst: '请先上传数据文件',
+  unknown: '未知错误',
+  startFailed: '启动失败',
+  totalPeaks: '总峰数',
+  classCount: '化合物类别数',
+  elapsed: '分析耗时',
+} : {
+  fileUpload: 'Data File Upload',
+  folderUpload: 'Folder Upload',
+  zipUpload: 'ZIP Upload',
+  folderDropText: 'Click to choose a <strong>.d folder</strong>. You can add multiple folders.',
+  folderDropTip: 'Select Bruker .d folders directly and analyze them in order.',
+  zipDropText: 'Click to choose <strong>.zip files</strong>. Multiple files are supported.',
+  zipDropTip: 'Compress .d folders into .zip files before uploading.',
+  uploading: 'Uploading',
+  files: 'files',
+  parameters: 'Analysis Parameters',
+  peakParams: 'Peak Detection Parameters',
+  peakProminence: 'Minimum peak prominence (%)',
+  calibrationParams: 'Calibration Parameters',
+  mzRange: 'm/z range',
+  ppmRange: 'ppm error range',
+  prelimParams: 'Preliminary Formula Search Parameters',
+  fullParams: 'Full Formula Search Parameters',
+  atomRange: 'atom range',
+  hcRange: 'H/C range',
+  ocRange: 'O/C range',
+  resetParams: 'Reset Defaults',
+  startAnalysis: 'Start Analysis',
+  running: 'Analyzing...',
+  progress: 'Analysis Progress',
+  peakDetection: 'Peak Detection',
+  kendrickFilter: 'Kendrick Filter',
+  prelimSearch: 'Preliminary Search',
+  calibration: 'Calibration',
+  fullSearch: 'Full Search',
+  indices: 'Index Calculation',
+  nitrogenRule: 'Nitrogen Rule',
+  weightedAverage: 'Weighted Average',
+  analysisComplete: 'Analysis complete',
+  analysisFailed: 'Analysis failed',
+  preview: 'Result Preview',
+  spectrum: 'Mass Spectrum',
+  errorPlot: 'm/z vs ppm Error',
+  classification: 'Compound Classification',
+  exportCsv: 'Export CSV',
+  viewReport: 'View Full Report',
+  statusSuccess: 'Success',
+  statusRunning: 'Running',
+  statusFailed: 'Failed',
+  statusPending: 'Pending',
+  chooseFolder: 'Click the button to choose a .d folder',
+  uploadSuccess: 'Upload successful',
+  uploadFailed: 'Upload failed',
+  notZip: 'is not a .zip file',
+  resetDone: 'Parameters were reset to defaults',
+  uploadFirst: 'Upload data files first',
+  unknown: 'Unknown error',
+  startFailed: 'Start failed',
+  totalPeaks: 'Total peaks',
+  classCount: 'Compound classes',
+  elapsed: 'Elapsed time',
+})
 
 const allElements = ['C', 'H', 'O', 'N', 'S', 'P', 'Cl']
-const stepNames = [
-  '峰检测', 'Kendrick 过滤', '初步搜索', '质量校准',
-  '完整搜索', '指标计算', '氮规则', '化合物分类', '加权平均',
-]
+const stepNames = computed(() => [
+  text.value.peakDetection, text.value.kendrickFilter, text.value.prelimSearch, text.value.calibration,
+  text.value.fullSearch, text.value.indices, text.value.nitrogenRule, text.value.classification, text.value.weightedAverage,
+])
 const activePanels = ref(['peak', 'full'])
 const uploadMode = ref('folder')
 const folderInputRef = ref(null)
@@ -321,7 +434,16 @@ async function handleFolderSelect(e) {
   e.target.value = ''
 }
 
-function handleFolderDrop(e) { ElMessage.info('请点击按钮选择 .d 文件夹') }
+function statusLabel(status) {
+  return {
+    success: text.value.statusSuccess,
+    running: text.value.statusRunning,
+    failed: text.value.statusFailed,
+    pending: text.value.statusPending,
+  }[status] || status
+}
+
+function handleFolderDrop(e) { ElMessage.info(text.value.chooseFolder) }
 
 async function doFolderUpload(files) {
   uploading.value = true
@@ -332,8 +454,8 @@ async function doFolderUpload(files) {
     clearInterval(progressTimer)
     uploadProgress.value = 100
     uploadedFiles.value.push(res)
-    ElMessage.success(`上传成功: ${res.filename} (${res.file_count} 个文件)`)
-  } catch (e) { ElMessage.error('上传失败: ' + e.message) }
+    ElMessage.success(`${text.value.uploadSuccess}: ${res.filename} (${res.file_count} ${text.value.files})`)
+  } catch (e) { ElMessage.error(`${text.value.uploadFailed}: ` + e.message) }
   finally { uploading.value = false }
 }
 
@@ -348,7 +470,7 @@ function handleZipDrop(e) {
   const files = e.dataTransfer?.files
   if (!files) return
   for (const file of files) {
-    if (!file.name.endsWith('.zip')) { ElMessage.warning(`${file.name} 不是 .zip 文件`); continue }
+    if (!file.name.endsWith('.zip')) { ElMessage.warning(`${file.name} ${text.value.notZip}`); continue }
     doZipUpload(file)
   }
 }
@@ -362,8 +484,8 @@ async function doZipUpload(file) {
     clearInterval(progressTimer)
     uploadProgress.value = 100
     uploadedFiles.value.push(res)
-    ElMessage.success(`上传成功: ${res.filename}`)
-  } catch (e) { ElMessage.error('上传失败: ' + e.message) }
+    ElMessage.success(`${text.value.uploadSuccess}: ${res.filename}`)
+  } catch (e) { ElMessage.error(`${text.value.uploadFailed}: ` + e.message) }
   finally { uploading.value = false }
 }
 
@@ -382,11 +504,11 @@ function resetParams() {
       min_hc: 0.3, max_hc: 2.25, min_oc: 0.0, max_oc: 1.2,
     },
   })
-  ElMessage.info('参数已恢复默认值')
+  ElMessage.info(text.value.resetDone)
 }
 
 async function startAnalysis() {
-  if (!uploadedFiles.value.length) return ElMessage.warning('请先上传数据文件')
+  if (!uploadedFiles.value.length) return ElMessage.warning(text.value.uploadFirst)
   running.value = true
   taskResult.value = null
 
@@ -408,7 +530,7 @@ async function startAnalysis() {
             const status = await getTaskStatus(res.id)
             progress.value = status.progress || 0
             currentStepName.value = mapStepName(status.current_step)
-            const stepIdx = stepNames.indexOf(currentStepName.value)
+            const stepIdx = stepNames.value.indexOf(currentStepName.value)
             currentStep.value = stepIdx >= 0 ? stepIdx + 1 : currentStep.value
             f.taskStatus = status.status
 
@@ -416,12 +538,12 @@ async function startAnalysis() {
               clearInterval(poll)
               taskResult.value = status
               await loadResults(res.id)
-              ElMessage.success(`[${i + 1}/${uploadedFiles.value.length}] ${f.filename} 分析完成！`)
+              ElMessage.success(`[${i + 1}/${uploadedFiles.value.length}] ${f.filename} ${text.value.analysisComplete}`)
               resolve()
             } else if (status.status === 'failed') {
               clearInterval(poll)
               taskResult.value = status
-              ElMessage.error(`${f.filename} 分析失败: ${status.error_message || '未知错误'}`)
+              ElMessage.error(`${f.filename} ${text.value.analysisFailed}: ${status.error_message || text.value.unknown}`)
               resolve()
             }
           } catch {}
@@ -429,7 +551,7 @@ async function startAnalysis() {
       })
     } catch (e) {
       f.taskStatus = 'failed'
-      ElMessage.error(`${f.filename} 启动失败: ${e.message}`)
+      ElMessage.error(`${f.filename} ${text.value.startFailed}: ${e.message}`)
     }
   }
   running.value = false
@@ -437,9 +559,9 @@ async function startAnalysis() {
 
 function mapStepName(step) {
   const map = {
-    peak_detection: '峰检测', kendrick_filter: 'Kendrick 过滤', preliminary_search: '初步搜索',
-    calibration: '质量校准', full_search: '完整搜索', indices_calc: '指标计算',
-    nitrogen_rule: '氮规则', classification: '化合物分类', weighted_avg: '加权平均',
+    peak_detection: text.value.peakDetection, kendrick_filter: text.value.kendrickFilter, preliminary_search: text.value.prelimSearch,
+    calibration: text.value.calibration, full_search: text.value.fullSearch, indices_calc: text.value.indices,
+    nitrogen_rule: text.value.nitrogenRule, classification: text.value.classification, weighted_avg: text.value.weightedAverage,
   }
   return map[step] || step
 }
@@ -459,9 +581,9 @@ async function loadResults(tid) {
     const totalPeaks = detail.mz?.length || 0
 
     summaryItems.value = [
-      { label: '总峰数', value: totalPeaks },
-      { label: '化合物类别数', value: Object.keys(classification).length },
-      { label: '分析耗时', value: '-' },
+      { label: text.value.totalPeaks, value: totalPeaks },
+      { label: text.value.classCount, value: Object.keys(classification).length },
+      { label: text.value.elapsed, value: '-' },
     ]
 
     await nextTick()

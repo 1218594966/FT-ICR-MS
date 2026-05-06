@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard">
-    <h1 class="page-title">仪表盘</h1>
-    <p class="page-subtitle">FT-ICR MS 数据分析平台概览</p>
+    <h1 class="page-title">{{ text.title }}</h1>
+    <p class="page-subtitle">{{ text.subtitle }}</p>
 
     <div class="stats-grid">
       <div class="stat-card" v-for="s in stats" :key="s.label">
@@ -16,38 +16,38 @@
     </div>
 
     <div class="quick-actions">
-      <h2 class="section-title">快速操作</h2>
+      <h2 class="section-title">{{ text.quickActions }}</h2>
       <div class="action-cards">
         <div class="action-card card-glass" @click="$router.push('/analysis')">
           <el-icon :size="36" color="#3b82f6"><Upload /></el-icon>
-          <h3>新建分析</h3>
-          <p>上传 .d 数据文件，配置参数，开始分析</p>
+          <h3>{{ text.newAnalysis }}</h3>
+          <p>{{ text.newAnalysisDesc }}</p>
         </div>
         <div class="action-card card-glass" @click="$router.push('/history')">
           <el-icon :size="36" color="#06b6d4"><Document /></el-icon>
-          <h3>历史记录</h3>
-          <p>查看、对比和管理历史分析结果</p>
+          <h3>{{ text.history }}</h3>
+          <p>{{ text.historyDesc }}</p>
         </div>
       </div>
     </div>
 
     <div class="recent-section" v-if="recentTasks.length">
-      <h2 class="section-title">最近任务</h2>
+      <h2 class="section-title">{{ text.recentTasks }}</h2>
       <el-table :data="recentTasks" class="dark-table" @row-click="goDetail">
-        <el-table-column prop="filename" label="文件名" min-width="200" />
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="filename" :label="text.filename" min-width="200" />
+        <el-table-column prop="status" :label="text.status" width="100">
           <template #default="{ row }">
             <el-tag :type="statusType(row.status)" size="small" effect="dark">
               {{ statusLabel(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="progress" label="进度" width="120">
+        <el-table-column prop="progress" :label="text.progress" width="120">
           <template #default="{ row }">
             <el-progress :percentage="row.progress" :stroke-width="6" :color="'#3b82f6'" />
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="180">
+        <el-table-column prop="created_at" :label="text.createdAt" width="180">
           <template #default="{ row }">{{ formatTime(row.created_at) }}</template>
         </el-table-column>
       </el-table>
@@ -56,28 +56,76 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getHistory } from '../api/analysis'
+import { useI18n } from '../i18n'
 
 const router = useRouter()
+const { lang } = useI18n()
 const recentTasks = ref([])
-const stats = ref([
-  { label: '总任务数', value: 0, icon: 'Tickets', bg: 'linear-gradient(135deg, #3b82f6, #06b6d4)' },
-  { label: '成功任务', value: 0, icon: 'CircleCheck', bg: 'linear-gradient(135deg, #10b981, #06b6d4)' },
-  { label: '运行中', value: 0, icon: 'Loading', bg: 'linear-gradient(135deg, #f59e0b, #ef4444)' },
-  { label: '失败任务', value: 0, icon: 'CircleClose', bg: 'linear-gradient(135deg, #ef4444, #8b5cf6)' },
+const totals = ref({ total: 0, success: 0, running: 0, failed: 0 })
+const text = computed(() => lang.value === 'zh' ? {
+  title: '仪表盘',
+  subtitle: 'FT-ICR MS 数据分析平台概览',
+  quickActions: '快速操作',
+  newAnalysis: '新建分析',
+  newAnalysisDesc: '上传 .d 数据文件，配置参数，开始分析',
+  history: '历史记录',
+  historyDesc: '查看、对比和管理历史分析结果',
+  recentTasks: '最近任务',
+  filename: '文件名',
+  status: '状态',
+  progress: '进度',
+  createdAt: '创建时间',
+  totalTasks: '总任务数',
+  successTasks: '成功任务',
+  runningTasks: '运行中',
+  failedTasks: '失败任务',
+  success: '成功',
+  running: '运行中',
+  failed: '失败',
+  pending: '等待中',
+  locale: 'zh-CN',
+} : {
+  title: 'Dashboard',
+  subtitle: 'Overview of the FT-ICR MS data analysis platform',
+  quickActions: 'Quick Actions',
+  newAnalysis: 'New Analysis',
+  newAnalysisDesc: 'Upload .d data files, configure parameters, and start analysis',
+  history: 'History',
+  historyDesc: 'View, compare, and manage historical analysis results',
+  recentTasks: 'Recent Tasks',
+  filename: 'Filename',
+  status: 'Status',
+  progress: 'Progress',
+  createdAt: 'Created At',
+  totalTasks: 'Total Tasks',
+  successTasks: 'Successful Tasks',
+  runningTasks: 'Running',
+  failedTasks: 'Failed Tasks',
+  success: 'Success',
+  running: 'Running',
+  failed: 'Failed',
+  pending: 'Pending',
+  locale: 'en-US',
+})
+const stats = computed(() => [
+  { label: text.value.totalTasks, value: totals.value.total, icon: 'Tickets', bg: 'linear-gradient(135deg, #3b82f6, #06b6d4)' },
+  { label: text.value.successTasks, value: totals.value.success, icon: 'CircleCheck', bg: 'linear-gradient(135deg, #10b981, #06b6d4)' },
+  { label: text.value.runningTasks, value: totals.value.running, icon: 'Loading', bg: 'linear-gradient(135deg, #f59e0b, #ef4444)' },
+  { label: text.value.failedTasks, value: totals.value.failed, icon: 'CircleClose', bg: 'linear-gradient(135deg, #ef4444, #8b5cf6)' },
 ])
 
 function statusType(s) {
   return { success: 'success', running: 'warning', failed: 'danger', pending: 'info' }[s] || 'info'
 }
 function statusLabel(s) {
-  return { success: '成功', running: '运行中', failed: '失败', pending: '等待中' }[s] || s
+  return { success: text.value.success, running: text.value.running, failed: text.value.failed, pending: text.value.pending }[s] || s
 }
 function formatTime(t) {
   if (!t) return '-'
-  return new Date(t).toLocaleString('zh-CN')
+  return new Date(t).toLocaleString(text.value.locale)
 }
 function goDetail(row) {
   router.push(`/task/${row.id}`)
@@ -87,10 +135,12 @@ onMounted(async () => {
   try {
     const data = await getHistory({ page: 1, page_size: 50 })
     recentTasks.value = data.tasks || []
-    stats.value[0].value = data.total || 0
-    stats.value[1].value = data.tasks.filter(t => t.status === 'success').length
-    stats.value[2].value = data.tasks.filter(t => t.status === 'running' || t.status === 'pending').length
-    stats.value[3].value = data.tasks.filter(t => t.status === 'failed').length
+    totals.value = {
+      total: data.total || 0,
+      success: data.tasks.filter(t => t.status === 'success').length,
+      running: data.tasks.filter(t => t.status === 'running' || t.status === 'pending').length,
+      failed: data.tasks.filter(t => t.status === 'failed').length,
+    }
   } catch {}
 })
 </script>
