@@ -83,6 +83,22 @@ http://<server-ip>:8000
 
 ## 常用命令
 
+同步更新到 GitHub：
+
+```bash
+git status
+git add -A
+git commit -m "update"
+git push
+```
+
+服务器拉取最新版本：
+
+```bash
+git pull
+PORT=8000 ./deploy/deploy-linux.sh
+```
+
 Docker 查看日志：
 
 ```bash
