@@ -7,6 +7,7 @@ const routes = [
   { path: '/batch-processing', name: 'BatchProcessing', component: () => import('../views/BatchProcessing.vue'), meta: { titleKey: 'batchProcessing' } },
   { path: '/ml-analysis', name: 'MLAnalysis', component: () => import('../views/MLAnalysis.vue'), meta: { titleKey: 'mlAnalysis' } },
   { path: '/source-database', name: 'SourceDatabase', component: () => import('../views/SourceDatabase.vue'), meta: { titleKey: 'sourceDatabase' } },
+  { path: '/pmd-analysis', name: 'PMDAnalysis', component: () => import('../views/PMDAnalysis.vue'), meta: { titleKey: 'pmdAnalysis' } },
   { path: '/task/:id', name: 'TaskDetail', component: () => import('../views/TaskDetail.vue'), meta: { titleKey: 'taskDetail' } },
   { path: '/history', name: 'History', component: () => import('../views/History.vue'), meta: { titleKey: 'history' } },
 ]

@@ -45,6 +45,10 @@
             <el-icon><Files /></el-icon>
             <span>{{ t('sourceDatabase') }}</span>
           </el-menu-item>
+          <el-menu-item index="/pmd-analysis">
+            <el-icon><Share /></el-icon>
+            <span>{{ t('pmdAnalysis') }}</span>
+          </el-menu-item>
           <el-menu-item index="/history">
             <el-icon><Clock /></el-icon>
             <span>{{ t('history') }}</span>

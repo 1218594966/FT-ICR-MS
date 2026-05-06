@@ -1,7 +1,7 @@
 <template>
   <div class="new-analysis">
-    <h1 class="page-title">新建分析</h1>
-    <p class="page-subtitle">上传 FT-ICR MS 数据文件，配置分析参数，一键开始分析</p>
+    <h1 class="page-title">{{ pageText.title }}</h1>
+    <p class="page-subtitle">{{ pageText.subtitle }}</p>
 
     <!-- Step 1: File Upload -->
     <section class="section card-glass">
@@ -242,10 +242,16 @@
 </template>
 
 <script setup>
-import { ref, reactive, onUnmounted, nextTick, watch } from 'vue'
+import { computed, ref, reactive, onUnmounted, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import { uploadDataFile, uploadFolder, startAnalysis as apiStart, getTaskStatus, getChartData, getExportUrl } from '../api/analysis'
+import { useI18n } from '../i18n'
+
+const { lang } = useI18n()
+const pageText = computed(() => lang.value === 'zh'
+  ? { title: '新建分析', subtitle: '上传 FT-ICR MS 数据文件，配置分析参数，一键开始分析' }
+  : { title: 'New Analysis', subtitle: 'Upload FT-ICR MS data, configure parameters, and start analysis.' })
 
 const allElements = ['C', 'H', 'O', 'N', 'S', 'P', 'Cl']
 const stepNames = [

@@ -1,7 +1,7 @@
 <template>
   <div class="data-analysis">
-    <h1 class="page-title">数据分析</h1>
-    <p class="page-subtitle">上传两个 CSV 文件，进行二元归一化处理并生成 DPR 图</p>
+    <h1 class="page-title">{{ pageText.title }}</h1>
+    <p class="page-subtitle">{{ pageText.subtitle }}</p>
 
     <!-- Step 1: Upload CSVs -->
     <section class="section card-glass">
@@ -85,8 +85,13 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import api from '../api/index'
+import { useI18n } from '../i18n'
 
 const router = useRouter()
+const { lang } = useI18n()
+const pageText = computed(() => lang.value === 'zh'
+  ? { title: '数据分析', subtitle: '上传两个 CSV 文件，生成 DPR 分类结果和 DPR Van Krevelen 图。' }
+  : { title: 'Data Analysis', subtitle: 'Upload two CSV files to generate DPR classes and DPR Van Krevelen plots.' })
 const input1 = ref(null)
 const input2 = ref(null)
 const dprInput = ref(null)

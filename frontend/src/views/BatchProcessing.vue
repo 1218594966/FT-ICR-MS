@@ -2,8 +2,8 @@
   <div class="batch-processing">
     <div class="page-head">
       <div>
-        <h1 class="page-title">批量处理</h1>
-        <p class="page-subtitle">批量上传常规分析 CSV，统一生成 Van Krevelen 图、PDF 和加权平均指标表。</p>
+        <h1 class="page-title">{{ pageText.title }}</h1>
+        <p class="page-subtitle">{{ pageText.subtitle }}</p>
       </div>
       <div v-if="result?.success" class="head-actions">
         <el-button type="primary" @click="download(result.pdf_zip_url)">
@@ -121,7 +121,12 @@
 import { computed, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import api from '../api/index'
+import { useI18n } from '../i18n'
 
+const { lang } = useI18n()
+const pageText = computed(() => lang.value === 'zh'
+  ? { title: '批量处理', subtitle: '批量上传常规分析 CSV，统一生成 Van Krevelen 图、PDF 和加权平均指标表。' }
+  : { title: 'Batch Processing', subtitle: 'Batch upload regular-analysis CSV files and export Van Krevelen plots, PDFs, and weighted-average tables.' })
 const fileList = ref([])
 const processing = ref(false)
 const result = ref(null)

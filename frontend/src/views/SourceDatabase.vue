@@ -1,7 +1,7 @@
 <template>
   <div class="source-database">
-    <h1 class="page-title">数据库创建</h1>
-    <p class="page-subtitle">把任意数量的 CSV 文件归入一个标签，合并所有分子式和 Peak Height 强度，形成可复用的分子数据库。</p>
+    <h1 class="page-title">{{ pageText.title }}</h1>
+    <p class="page-subtitle">{{ pageText.subtitle }}</p>
 
     <section class="section card-glass">
       <h2 class="section-title"><el-icon><Files /></el-icon> 创建或追加分子数据库</h2>
@@ -284,7 +284,12 @@
 import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import api from '../api/index'
+import { useI18n } from '../i18n'
 
+const { lang } = useI18n()
+const pageText = computed(() => lang.value === 'zh'
+  ? { title: '分子数据库', subtitle: '把任意数量的 CSV 文件归入一个标签，合并所有分子式和 Peak Height 强度，形成可复用的分子数据库。' }
+  : { title: 'Molecular Database', subtitle: 'Merge any number of CSV files into a reusable molecular database with formulas and Peak Height intensities.' })
 const buildInput = ref(null)
 const compareInput = ref(null)
 const dprUpstreamInput = ref(null)

@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse
 
 from app.config import settings, get_default_params
 from app.models.database import init_db
-from app.api import upload, analysis, results, history, export, data_analysis, ml_analysis, source_database, batch
+from app.api import upload, analysis, results, history, export, data_analysis, ml_analysis, source_database, batch, pmd_analysis
 
 app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION)
 
@@ -33,6 +33,7 @@ app.include_router(data_analysis.router)
 app.include_router(ml_analysis.router)
 app.include_router(source_database.router)
 app.include_router(batch.router)
+app.include_router(pmd_analysis.router)
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 

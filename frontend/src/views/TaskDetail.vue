@@ -2,7 +2,7 @@
   <div class="task-detail" v-loading="loading">
     <div class="header-row">
       <div>
-        <h1 class="page-title">{{ task?.filename || '任务详情' }}</h1>
+        <h1 class="page-title">{{ task?.filename || pageText.title }}</h1>
         <p class="page-subtitle">
           <el-tag :type="statusType" effect="dark" size="small">{{ statusLabel }}</el-tag>
           <el-tag v-if="task?.task_type === 'dpr'" type="warning" effect="plain" size="small">DPR 对比</el-tag>
@@ -148,9 +148,12 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import * as echarts from 'echarts'
 import { getTaskDetail, getTaskStatus, getChartData, getExportUrl, getVKPdfUrl, getVKSvgUrl, getVKTifUrl, getChartPdfUrl, getChartTifUrl, deleteTask } from '../api/analysis'
 import api from '../api/index'
+import { useI18n } from '../i18n'
 
 const route = useRoute()
 const router = useRouter()
+const { lang } = useI18n()
+const pageText = computed(() => lang.value === 'zh' ? { title: '任务详情' } : { title: 'Task Detail' })
 const taskId = route.params.id
 
 const task = ref(null)

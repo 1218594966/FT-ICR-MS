@@ -1,7 +1,7 @@
 <template>
   <div class="history">
-    <h1 class="page-title">历史记录</h1>
-    <p class="page-subtitle">查看和管理所有分析任务</p>
+    <h1 class="page-title">{{ pageText.title }}</h1>
+    <p class="page-subtitle">{{ pageText.subtitle }}</p>
 
     <div class="filter-bar">
       <el-select v-model="typeFilter" placeholder="任务类型" clearable style="width: 160px" @change="loadData">
@@ -86,13 +86,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getHistory, deleteTask, getExportUrl } from '../api/analysis'
 import api from '../api/index'
+import { useI18n } from '../i18n'
 
 const router = useRouter()
+const { lang } = useI18n()
+const pageText = computed(() => lang.value === 'zh'
+  ? { title: '历史记录', subtitle: '查看和管理所有分析任务。' }
+  : { title: 'History', subtitle: 'View and manage all analysis tasks.' })
 const tasks = ref([])
 const loading = ref(false)
 const page = ref(1)
