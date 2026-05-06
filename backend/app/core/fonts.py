@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 import matplotlib
 from matplotlib import font_manager
@@ -23,6 +24,8 @@ CJK_FONTS = [
     "Arial Unicode MS",
     "DejaVu Sans",
 ]
+
+_CJK_RE = re.compile(r"[\u3400-\u9fff\uf900-\ufaff]")
 
 
 def register_project_fonts() -> set[str]:
@@ -70,6 +73,9 @@ def configure_matplotlib_fonts(font_family: str = "Times New Roman", pdf_fonttyp
 
 def apply_font_to_figure(fig, font_family: str = "Times New Roman"):
     selected = configure_matplotlib_fonts(font_family)
+    available = register_project_fonts()
+    selected_cjk = next((name for name in CJK_FONTS if name in available), selected)
     for text in fig.findobj(match=matplotlib.text.Text):
-        text.set_fontfamily(selected)
+        content = text.get_text() or ""
+        text.set_fontfamily(selected_cjk if _CJK_RE.search(content) else selected)
     return selected

@@ -9,8 +9,10 @@
 - 批量上传常规分析 CSV，批量生成 Van Krevelen 图、PDF ZIP 和加权平均 Excel
 - DPR 数据分析、DPR 图和热图导出
 - 分子数据库创建、追加、删除、下载和样品对比
-- XGBoost 机器学习分析
+- PMD 单样本/双样本反应网络分析，支持 GraphML/GEXF、反应统计 CSV、雷达图 PDF，并支持默认反应或自定义反应
+- XGBoost 机器学习分析，支持二分类/三分类
 - SHAP 二分类/三分类解释，支持选择解释类别和 SHAP 数据集
+- 中英文界面切换，默认英文
 
 ## 本地开发
 
@@ -55,6 +57,8 @@ chmod +x deploy/deploy.sh
 ```text
 http://<server-ip>:8080
 ```
+
+Docker 默认将前端暴露到服务器 `8080` 端口，即 `8080:80`。如果 8080 被占用，可以修改 `deploy/docker-compose.yml` 里的端口映射。
 
 如果你用宝塔/1Panel/Nginx 做反向代理，建议代理到：
 
@@ -105,6 +109,16 @@ git pull
 PORT=8000 ./deploy/deploy-linux.sh
 ```
 
+如果服务器提示 `Your local changes to the following files would be overwritten by merge`，通常是服务器上临时修改过部署文件。确认不需要保留服务器本地改动时，可执行：
+
+```bash
+cd ~/FT-ICR-MS
+git restore deploy/deploy.sh deploy/docker-compose.yml
+git pull
+cd deploy
+docker compose up -d --build
+```
+
 Docker 查看日志：
 
 ```bash
@@ -128,6 +142,27 @@ tail -f logs/server.log logs/server.err.log
 Docker 镜像会自动安装 Times 兼容字体和 Noto CJK 字体，避免 Linux 服务器生成图表时退回默认字体或中文显示方框。
 
 真正的 Times New Roman 属于微软字体，仓库不会直接携带。若需要服务器输出完全等同 Windows 的 Times New Roman，请将合法授权的 `times.ttf`、`timesbd.ttf`、`timesi.ttf`、`timesbi.ttf` 放入 `backend/app/fonts/` 后重新构建 Docker。没有这些字体时，系统会优先使用 Tinos/Liberation Serif 作为 Times New Roman 的 Linux 替代字体。
+
+## PMD 分析说明
+
+PMD 页面里的“质量匹配小数位 / Mass decimals”用于控制反应质量差匹配精度。例如默认值 `8` 表示把分子精确质量四舍五入到 8 位小数后，再匹配 `+O`、`-CO2`、`-CH2` 等反应质量差。数值越大匹配越严格，通常保持 `8` 即可。
+
+PMD 默认反应包含：
+
+- Carboxylic acid：`-CO`、`-CO2`、`-CH2O`
+- Oxygen addition：`+O`、`+O2`、`+O3`、`+H2O`、`+H2O2`
+- Other reactions：`-H2O`、`+H2`、`-H2`
+- Sulfate：`-S`、`-SO`、`-SO2`、`-SO3`
+- Amine：`-NH3`、`-NH`
+- Dealkyl：`-CH2`、`-C2H2`、`-C2H4`、`-C3H6`
+
+页面支持直接编辑反应分类、正负号、反应式、名称和颜色，也可以新增自定义反应或停用不需要的默认反应。
+
+## 机器学习和 SHAP
+
+机器学习模块使用 XGBoost 分类器。模型始终用训练集训练，页面可选择 SHAP 解释训练集、测试集或全部数据；二分类和三分类都支持选择目标类别。SHAP 正值表示特征把模型输出推向当前选择的目标类别，负值表示远离该目标类别。
+
+SHAP 图、相关性矩阵、混淆矩阵和数据库热图都会调用统一 Matplotlib 字体配置：英文优先 Times New Roman/Tinos/Liberation Serif，中文使用 Noto CJK 等中文字体，避免 Linux 服务器中文方框。
 
 ## 目录结构
 

@@ -137,8 +137,10 @@ def _load_reactions(custom_reactions: str = ""):
                         item.get("color", "#2563eb"),
                         item.get("name", item.get("label", item.get("reaction", ""))),
                     ))
-        except Exception:
-            rows = []
+            else:
+                raise ValueError("custom_reactions must be a list")
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=f"Invalid custom reactions: {exc}")
     if not rows:
         rows = DEFAULT_REACTIONS
 
@@ -162,6 +164,8 @@ def _load_reactions(custom_reactions: str = ""):
             "name": str(name or formula),
             "delta": float(delta),
         })
+    if not parsed:
+        raise HTTPException(status_code=400, detail="At least one valid PMD reaction is required")
     return parsed
 
 

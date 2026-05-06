@@ -262,11 +262,6 @@ def _analyze_dataframe(
     shap_target_index = class_names.index(shap_target_class)
     shap_dataset = (shap_dataset or "train").strip().lower()
     shap_dataset_map = {
-        "train": ("训练集", "Train set", X_train),
-        "test": ("测试集", "Test set", X_test),
-        "all": ("全部数据", "All data", X),
-    }
-    shap_dataset_map = {
         "train": ("Train set", "Train set", X_train),
         "test": ("Test set", "Test set", X_test),
         "all": ("All data", "All data", X),
