@@ -533,7 +533,7 @@ def export_dpr_pdf(
     if not fpath.exists():
         raise HTTPException(status_code=404, detail="File not found")
 
-    df = pd.read_csv(fpath)
+    df = _read_csv_auto(fpath)
     if not all(c in df.columns for c in ['MolForm', 'Col1', 'Col2']):
         raise HTTPException(status_code=400, detail="Invalid CSV format")
 
@@ -672,7 +672,7 @@ def export_dpr_tif(
     if not fpath.exists():
         raise HTTPException(status_code=404, detail="File not found")
 
-    df = pd.read_csv(fpath)
+    df = _read_csv_auto(fpath)
     if not all(c in df.columns for c in ['MolForm', 'Col1', 'Col2']):
         raise HTTPException(status_code=400, detail="Invalid CSV format")
 

@@ -18,6 +18,9 @@ const messages = {
     language: 'Language',
     english: 'English',
     chinese: '中文',
+    theme: 'Theme',
+    darkTheme: 'Dark',
+    lightTheme: 'Light',
   },
   zh: {
     appTitle: 'FT-ICR MS 分析平台',
@@ -33,6 +36,9 @@ const messages = {
     language: '语言',
     english: 'English',
     chinese: '中文',
+    theme: '主题',
+    darkTheme: '深色',
+    lightTheme: '浅色',
   },
 }
 

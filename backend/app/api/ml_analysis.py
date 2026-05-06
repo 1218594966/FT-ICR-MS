@@ -1,8 +1,10 @@
 import base64
 import io
 import json
+import math
 import os
 import re
+import unicodedata
 from pathlib import Path
 from typing import List, Optional
 
@@ -23,6 +25,51 @@ router = APIRouter(prefix="/api/ml", tags=["ml-analysis"])
 
 def _configure_ml_plot_fonts():
     configure_matplotlib_fonts("Times New Roman", pdf_fonttype=3)
+
+
+def _clean_feature_label(label) -> str:
+    text = unicodedata.normalize("NFKC", str(label or "")).strip()
+    text = re.sub(r"[\u200b-\u200f\u202a-\u202e\ufeff]", "", text)
+    text = text.replace("／", "/").replace("⁄", "/").replace("∕", "/")
+    text = text.replace("－", "-").replace("–", "-").replace("—", "-")
+    text = re.sub(r"\s+", " ", text)
+    compact = text.replace(" ", "")
+    canonical = {
+        "N/C": "N/C",
+        "S/C": "S/C",
+        "P/C": "P/C",
+        "O/C": "O/C",
+        "H/C": "H/C",
+        "DBE-O": "DBE-O",
+        "DBE/C": "DBE/C",
+        "DBE/H": "DBE/H",
+        "DBE/O": "DBE/O",
+        "AImod": "AImod",
+        "NOSC": "NOSC",
+        "is_CRAM": "CRAM",
+        "isCRAM": "CRAM",
+        "neutral_mass": "Neutral mass",
+        "neutral_mass_rounded": "Rounded neutral mass",
+        "PeakHeight": "Peak Height",
+        "Peak_Height": "Peak Height",
+    }
+    if text in canonical:
+        return canonical[text]
+    if compact in canonical:
+        return canonical[compact]
+    safe = re.sub(r"[^A-Za-z0-9_./+\-() ]+", "", text).strip()
+    return safe or "Feature"
+
+
+def _deduplicate_feature_labels(labels: list[str]) -> list[str]:
+    used = {}
+    result = []
+    for label in labels:
+        base = _clean_feature_label(label)
+        count = used.get(base, 0)
+        used[base] = count + 1
+        result.append(base if count == 0 else f"{base}_{count + 1}")
+    return result
 
 
 def _resolve_dpr_csv(task: Task) -> str | None:
@@ -131,6 +178,13 @@ def _validate_dpr_df(df: pd.DataFrame, selected_classes: Optional[List[str]] = N
         raise HTTPException(status_code=400, detail="Please select two or three classes for machine learning")
     if len(df) < 6:
         raise HTTPException(status_code=400, detail="At least six rows are required for machine learning")
+    class_counts = df['NewCol'].value_counts()
+    too_small = class_counts[class_counts < 2]
+    if not too_small.empty:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Each selected class must contain at least two rows. Too few rows: {too_small.to_dict()}",
+        )
     return df
 
 
@@ -206,18 +260,28 @@ def _analyze_dataframe(
     X = data[feature_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
     if X.empty:
         raise HTTPException(status_code=400, detail="No numeric feature columns available for machine learning")
+    plot_feature_cols = _deduplicate_feature_labels(feature_cols)
+    feature_name_map = {str(original): cleaned for original, cleaned in zip(feature_cols, plot_feature_cols)}
+    X.columns = plot_feature_cols
 
     label_encoder = deps["LabelEncoder"]()
     y_encoded = label_encoder.fit_transform(data['NewCol'])
-    class_counts = pd.Series(y_encoded).value_counts()
-    min_class_count = int(class_counts.min())
-    stratify = y_encoded if min_class_count >= 2 else None
+    stratify = y_encoded
+    num_classes = len(label_encoder.classes_)
+    n_rows = len(X)
+    test_count = max(num_classes, int(math.ceil(n_rows * 0.2)))
+    train_count = n_rows - test_count
+    if train_count < num_classes:
+        raise HTTPException(
+            status_code=400,
+            detail="Not enough rows to keep every class in both training and test sets",
+        )
+    test_size = test_count / n_rows
 
     X_train, X_test, y_train, y_test = deps["train_test_split"](
-        X, y_encoded, test_size=0.2, random_state=42, stratify=stratify
+        X, y_encoded, test_size=test_size, random_state=42, stratify=stratify
     )
 
-    num_classes = len(label_encoder.classes_)
     model_kwargs = {
         "random_state": 42,
         "eval_metric": "mlogloss" if num_classes > 2 else "logloss",
@@ -310,7 +374,8 @@ def _analyze_dataframe(
         "report_train": report_train,
         "confusion_matrix_test": conf_matrix_test.tolist(),
         "confusion_matrix_train": conf_matrix_train.tolist(),
-        "feature_columns": feature_cols,
+        "feature_columns": plot_feature_cols,
+        "feature_name_map": feature_name_map,
         "plots": plots,
     }
 

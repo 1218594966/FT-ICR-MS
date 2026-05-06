@@ -56,6 +56,12 @@
         </el-menu>
 
         <div class="sidebar-footer">
+          <el-tooltip :content="isDark ? t('lightTheme') : t('darkTheme')" placement="right">
+            <el-button class="theme-toggle" text @click="toggleTheme">
+              <el-icon><component :is="isDark ? 'Sunny' : 'Moon'" /></el-icon>
+              <span>{{ isDark ? t('darkTheme') : t('lightTheme') }}</span>
+            </el-button>
+          </el-tooltip>
           <el-segmented
             :model-value="lang"
             :options="languageOptions"
@@ -84,9 +90,11 @@ import { useRoute } from 'vue-router'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import en from 'element-plus/es/locale/lang/en'
 import { useI18n } from './i18n'
+import { useTheme } from './theme'
 
 const route = useRoute()
 const { lang, t, setLang } = useI18n()
+const { isDark, toggleTheme } = useTheme()
 
 const elementLocale = computed(() => (lang.value === 'zh' ? zhCn : en))
 const languageOptions = computed(() => [
@@ -138,9 +146,7 @@ watchEffect(() => {
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 1px;
-  background: var(--accent-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--accent-blue);
 }
 
 .sidebar-menu {
@@ -183,12 +189,22 @@ watchEffect(() => {
   }
 }
 
+.theme-toggle {
+  justify-content: flex-start;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  &:hover {
+    color: var(--text-primary) !important;
+    background: var(--bg-card-hover) !important;
+  }
+}
+
 .main-content {
   flex: 1;
   overflow-y: auto;
   padding: 24px 28px;
-  background:
-    radial-gradient(ellipse at 70% 10%, rgba(59, 130, 246, 0.03) 0%, transparent 40%),
-    var(--bg-primary);
+  background: var(--bg-primary);
 }
 </style>
