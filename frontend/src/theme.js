@@ -1,10 +1,10 @@
 import { computed, ref } from 'vue'
 
 const saved = localStorage.getItem('fticrms_theme')
-const theme = ref(saved === 'light' ? 'light' : 'dark')
+const theme = ref(saved === 'dark' ? 'dark' : 'light')
 
 function applyTheme(value) {
-  const normalized = value === 'light' ? 'light' : 'dark'
+  const normalized = value === 'dark' ? 'dark' : 'light'
   theme.value = normalized
   localStorage.setItem('fticrms_theme', normalized)
   document.documentElement.dataset.theme = normalized
