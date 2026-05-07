@@ -57,6 +57,20 @@ def _clean_feature_label(label) -> str:
         return canonical[text]
     if compact in canonical:
         return canonical[compact]
+    ascii_compact = re.sub(r"[^A-Za-z0-9]+", "", text)
+    fuzzy = {
+        "HC": "H/C",
+        "OC": "O/C",
+        "NC": "N/C",
+        "SC": "S/C",
+        "PC": "P/C",
+        "DBEO": "DBE-O",
+        "DBEC": "DBE/C",
+        "DBEH": "DBE/H",
+        "DBEO2": "DBE/O",
+    }
+    if ascii_compact in fuzzy:
+        return fuzzy[ascii_compact]
     safe = re.sub(r"[^A-Za-z0-9_./+\-() ]+", "", text).strip()
     return safe or "Feature"
 
@@ -188,13 +202,19 @@ def _validate_dpr_df(df: pd.DataFrame, selected_classes: Optional[List[str]] = N
     return df
 
 
-def _figure_to_base64(fig):
-    buf = io.BytesIO()
+def _figure_to_outputs(fig):
     apply_font_to_figure(fig)
-    fig.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+    png_buf = io.BytesIO()
+    pdf_buf = io.BytesIO()
+    fig.savefig(png_buf, format='png', dpi=150, bbox_inches='tight')
+    fig.savefig(pdf_buf, format='pdf', dpi=300, bbox_inches='tight')
     plt.close(fig)
-    buf.seek(0)
-    return base64.b64encode(buf.getvalue()).decode('utf-8')
+    png_buf.seek(0)
+    pdf_buf.seek(0)
+    return {
+        "png": base64.b64encode(png_buf.getvalue()).decode('utf-8'),
+        "pdf": base64.b64encode(pdf_buf.getvalue()).decode('utf-8'),
+    }
 
 
 def _build_shap_plot(shap, best_model, X_background, X_explain, class_index: int, class_name: str, num_classes: int, dataset_label: str):
@@ -219,9 +239,11 @@ def _build_shap_plot(shap, best_model, X_background, X_explain, class_index: int
                 data=shap_values.data,
                 feature_names=shap_values.feature_names,
             )
-        shap.plots.beeswarm(shap_values, max_display=15, show=False)
+        shap.plots.beeswarm(shap_values, max_display=15, show=False, color_bar_label="Feature value")
+        fig = plt.gcf()
+        fig.set_size_inches(11, 8)
         plt.title(f"SHAP Beeswarm for class {class_name} ({dataset_label})")
-        apply_font_to_figure(plt.gcf())
+        apply_font_to_figure(fig)
         plt.subplots_adjust(left=0.34, right=0.98, bottom=0.12, top=0.92)
     except Exception:
         plt.close(fig)
@@ -337,12 +359,15 @@ def _analyze_dataframe(
     conf_matrix_train = deps["confusion_matrix"](y_train, y_pred_train, labels=labels)
 
     plots = {}
+    plot_pdfs = {}
     _configure_ml_plot_fonts()
     fig_corr, ax_corr = plt.subplots(figsize=(12, 10))
     sns.heatmap(X.corr(), annot=False, cmap='coolwarm', fmt=".2f", linewidths=0.5, ax=ax_corr)
     ax_corr.set_title("Feature Correlation Matrix", fontsize=14)
     plt.tight_layout()
-    plots['correlation'] = _figure_to_base64(fig_corr)
+    corr_outputs = _figure_to_outputs(fig_corr)
+    plots['correlation'] = corr_outputs["png"]
+    plot_pdfs['correlation'] = corr_outputs["pdf"]
 
     fig_conf, ax_conf = plt.subplots(figsize=(8, 6))
     sns.heatmap(conf_matrix_test, annot=True, fmt="d", cmap="Blues",
@@ -351,11 +376,15 @@ def _analyze_dataframe(
     ax_conf.set_ylabel("Actual", fontsize=12)
     ax_conf.set_title("Confusion Matrix (Test Set)", fontsize=14)
     plt.tight_layout()
-    plots['confusion'] = _figure_to_base64(fig_conf)
+    conf_outputs = _figure_to_outputs(fig_conf)
+    plots['confusion'] = conf_outputs["png"]
+    plot_pdfs['confusion'] = conf_outputs["pdf"]
 
-    plots['shap'] = _figure_to_base64(_build_shap_plot(
+    shap_outputs = _figure_to_outputs(_build_shap_plot(
         deps["shap"], best_model, X_train, X_shap, shap_target_index, shap_target_class, num_classes, shap_dataset_plot_label
     ))
+    plots['shap'] = shap_outputs["png"]
+    plot_pdfs['shap'] = shap_outputs["pdf"]
 
     return {
         "source_name": source_name,
@@ -377,6 +406,7 @@ def _analyze_dataframe(
         "feature_columns": plot_feature_cols,
         "feature_name_map": feature_name_map,
         "plots": plots,
+        "plot_pdfs": plot_pdfs,
     }
 
 

@@ -53,7 +53,8 @@ def configure_matplotlib_fonts(font_family: str = "Times New Roman", pdf_fonttyp
 
     selected_serif = next((name for name in serif if name in available), "DejaVu Serif")
     cjk = [name for name in CJK_FONTS if name in available]
-    family_stack = [selected_serif] + [name for name in serif if name != selected_serif] + cjk
+    fallback_serif = [name for name in serif if name in available and name != selected_serif]
+    family_stack = [selected_serif] + fallback_serif + cjk
 
     matplotlib.rcParams.update({
         "font.family": family_stack,

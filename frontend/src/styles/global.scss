@@ -140,6 +140,22 @@ html[data-theme='light'] {
     color: var(--text-secondary) !important;
   }
 
+  .card-glass,
+  .section,
+  .action-card,
+  .stat-card,
+  .summary-item,
+  .info-block,
+  .control-block,
+  .class-controls,
+  .vk-params,
+  .vk-colors,
+  .timeline-item {
+    background: #ffffff !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+
   .dark-table,
   .reaction-table,
   .db-table {
@@ -153,29 +169,107 @@ html[data-theme='light'] {
     --el-table-expanded-cell-bg-color: #ffffff !important;
   }
 
+  .el-table,
+  .el-table__inner-wrapper,
+  .el-table__body-wrapper,
+  .el-table__header-wrapper,
+  .el-table tr,
+  .el-table td.el-table__cell {
+    background: #ffffff !important;
+    color: var(--text-primary) !important;
+  }
+
+  .el-table th.el-table__cell {
+    background: #eef2f6 !important;
+    color: #334155 !important;
+  }
+
+  .el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell,
+  .el-table__body tr:hover > td.el-table__cell {
+    background: #f6f8fb !important;
+  }
+
   .upload-box,
   .upload-dropzone,
   .element-panel,
   .color-panel,
+  .color-item,
   .label-panel,
   .result-card,
   .reaction-panel,
   .sample-picker,
   .info-panel,
   .plot-item,
-  .report-text {
+  .report-text,
+  .suggestions,
+  .batch-upload .el-upload-dragger,
+  .el-upload-dragger {
     background: #ffffff !important;
     border-color: var(--border-color) !important;
     color: var(--text-primary) !important;
   }
 
-  .batch-upload .el-upload-dragger {
+  .el-input__wrapper,
+  .el-select__wrapper,
+  .el-input-number__decrease,
+  .el-input-number__increase,
+  .el-textarea__inner {
+    background: #ffffff !important;
+    border-color: var(--border-color) !important;
+    box-shadow: 0 0 0 1px var(--border-color) inset !important;
+    color: var(--text-primary) !important;
+  }
+
+  .el-input__inner,
+  .el-select__placeholder,
+  .el-textarea__inner,
+  .el-radio,
+  .el-checkbox,
+  .el-form-item__label {
+    color: var(--text-primary) !important;
+  }
+
+  .el-input__inner::placeholder,
+  .el-textarea__inner::placeholder {
+    color: var(--text-muted) !important;
+  }
+
+  .el-checkbox.is-bordered,
+  .el-radio.is-bordered {
     background: #ffffff !important;
     border-color: var(--border-color) !important;
   }
 
+  .card-glass h1,
+  .card-glass h2,
+  .card-glass h3,
+  .card-glass h4,
+  .section h1,
+  .section h2,
+  .section h3,
+  .section h4,
+  .panel-head h3,
+  .plot-head h4,
+  .plot-item h4,
+  .item-head h3,
+  .color-head h3,
+  .control-label,
+  .file-name,
+  .color-label,
+  .stat-lbl,
+  .upload-box strong {
+    color: var(--text-primary) !important;
+  }
+
+  .page-subtitle,
+  .panel-head p,
+  .item-head p,
+  .color-head p,
+  .upload-tip,
   .batch-upload .el-upload__text,
-  .el-upload__text {
+  .el-upload__text,
+  .round-control,
+  .note {
     color: var(--text-secondary) !important;
   }
 }

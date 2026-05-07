@@ -158,15 +158,30 @@
         <h3>{{ text.plots }}</h3>
         <div class="plot-grid">
           <div v-if="result.plots.correlation" class="plot-item">
-            <h4>{{ text.correlation }}</h4>
+            <div class="plot-head">
+              <h4>{{ text.correlation }}</h4>
+              <el-button v-if="result.plot_pdfs?.correlation" size="small" @click="downloadPdf(result.plot_pdfs.correlation, 'feature_correlation_matrix.pdf')">
+                PDF
+              </el-button>
+            </div>
             <img :src="'data:image/png;base64,' + result.plots.correlation" alt="Correlation Matrix" />
           </div>
           <div v-if="result.plots.confusion" class="plot-item">
-            <h4>{{ text.confusion }}</h4>
+            <div class="plot-head">
+              <h4>{{ text.confusion }}</h4>
+              <el-button v-if="result.plot_pdfs?.confusion" size="small" @click="downloadPdf(result.plot_pdfs.confusion, 'confusion_matrix.pdf')">
+                PDF
+              </el-button>
+            </div>
             <img :src="'data:image/png;base64,' + result.plots.confusion" alt="Confusion Matrix" />
           </div>
           <div v-if="result.plots.shap" class="plot-item">
-            <h4>{{ text.shapPlot }}</h4>
+            <div class="plot-head">
+              <h4>{{ text.shapPlot }}</h4>
+              <el-button v-if="result.plot_pdfs?.shap" size="small" @click="downloadPdf(result.plot_pdfs.shap, 'shap_beeswarm.pdf')">
+                PDF
+              </el-button>
+            </div>
             <img :src="'data:image/png;base64,' + result.plots.shap" alt="SHAP Beeswarm" />
           </div>
         </div>
@@ -410,6 +425,13 @@ function onSelectedClassesChange() {
   }
 }
 
+function downloadPdf(base64, filename) {
+  const link = document.createElement('a')
+  link.href = `data:application/pdf;base64,${base64}`
+  link.download = filename
+  link.click()
+}
+
 async function inspectClasses() {
   result.value = null
   if (selectedTaskId.value && applyCachedClasses()) return
@@ -520,7 +542,8 @@ onMounted(loadDprFiles)
 .report-text { background: var(--bg-secondary); padding: 16px; border-radius: var(--radius-md); overflow-x: auto; color: var(--text-primary); font-family: 'Courier New', monospace; font-size: 12px; }
 .plots-section h3 { margin-bottom: 16px; }
 .plot-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px; }
-.plot-item { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; h4 { margin-bottom: 12px; font-size: 14px; color: var(--text-secondary); } img { width: 100%; height: auto; border-radius: var(--radius-md); background: white; } }
+.plot-item { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 16px; h4 { margin: 0; font-size: 14px; color: var(--text-secondary); } img { width: 100%; height: auto; border-radius: var(--radius-md); background: white; } }
+.plot-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 12px; }
 @media (max-width: 1100px) {
   .class-controls { grid-template-columns: 1fr; }
   .plot-grid { grid-template-columns: 1fr; }
