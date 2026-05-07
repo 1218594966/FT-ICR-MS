@@ -103,7 +103,7 @@ def get_chart_data(task_id: str, chart_type: str, db: Session = Depends(get_db))
         d = steps.get("peak_detection", {}).get("data", {})
         return {"mz": _clean_list(d.get("mz", [])), "abundance": _clean_list(d.get("abundance", []))}
 
-    elif chart_type == "preliminary":
+    elif chart_type in {"preliminary", "error"}:
         d = steps.get("preliminary_search", {}).get("data", {})
         return {"mz": _clean_list(d.get("mz", [])), "ppm_error": _clean_list(d.get("ppm_error", [])), "formulas": d.get("formulas", [])}
 

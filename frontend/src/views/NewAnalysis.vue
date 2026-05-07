@@ -572,13 +572,12 @@ async function loadResults(tid) {
   try {
     const [spectrum, error, classification, weighted] = await Promise.all([
       getChartData(tid, 'spectrum'),
-      getChartData(tid, 'error'),
+      getChartData(tid, 'preliminary'),
       getChartData(tid, 'classification'),
       getChartData(tid, 'weighted'),
     ])
 
-    const detail = await getChartData(tid, 'error')
-    const totalPeaks = detail.mz?.length || 0
+    const totalPeaks = spectrum.mz?.length || 0
 
     summaryItems.value = [
       { label: text.value.totalPeaks, value: totalPeaks },
