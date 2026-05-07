@@ -562,6 +562,16 @@ function mapStepName(step) {
     peak_detection: text.value.peakDetection, kendrick_filter: text.value.kendrickFilter, preliminary_search: text.value.prelimSearch,
     calibration: text.value.calibration, full_search: text.value.fullSearch, indices_calc: text.value.indices,
     nitrogen_rule: text.value.nitrogenRule, classification: text.value.classification, weighted_avg: text.value.weightedAverage,
+    '原始数据读取与峰检测': text.value.peakDetection,
+    'Kendrick 质量噪声过滤': text.value.kendrickFilter,
+    '初步分子式搜索': text.value.prelimSearch,
+    '内部质量校准': text.value.calibration,
+    '完整分子式搜索': text.value.fullSearch,
+    '分子指标计算': text.value.indices,
+    '氮规则过滤': text.value.nitrogenRule,
+    '化合物类型分类': text.value.classification,
+    '加权平均指标计算': text.value.weightedAverage,
+    completed: text.value.analysisComplete,
   }
   return map[step] || step
 }

@@ -16,6 +16,18 @@ from app.core.pipeline import AnalysisPipeline, extract_upload
 
 _lock = threading.Lock()
 
+_STEP_KEYS = {
+    1: "peak_detection",
+    2: "kendrick_filter",
+    3: "preliminary_search",
+    4: "calibration",
+    5: "full_search",
+    6: "indices_calc",
+    7: "nitrogen_rule",
+    8: "classification",
+    9: "weighted_avg",
+}
+
 
 def _update_task(task_id: str, **kwargs):
     with _lock:
@@ -51,7 +63,7 @@ def _run_analysis(task_id: str):
             overall = ((step - 1) / 9 * 100) + (pct / 9)
             _update_task(
                 task_id,
-                current_step=step_name,
+                current_step=_STEP_KEYS.get(step, step_name),
                 progress=round(overall, 1),
             )
 
