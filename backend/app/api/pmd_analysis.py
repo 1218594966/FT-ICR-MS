@@ -145,7 +145,7 @@ def _load_reactions(custom_reactions: str = ""):
         rows = DEFAULT_REACTIONS
 
     parsed = []
-    for category, sign, formula, color, name in rows:
+    for idx, (category, sign, formula, color, name) in enumerate(rows):
         if not formula:
             continue
         delta = _mass(formula)
@@ -157,6 +157,7 @@ def _load_reactions(custom_reactions: str = ""):
             except ValueError:
                 pass
         parsed.append({
+            "id": f"r{idx}",
             "category": str(category),
             "type": str(sign).strip(),
             "formula": str(formula),
@@ -187,7 +188,7 @@ def _build_network(df_a, df_b, reactions, mode: str, round_val: int):
         node_id = f"B:{row['formula']}" if cross else row["formula"]
         graph.add_node(node_id, formula=row["formula"], sample="B" if cross else "A", mass=row["mass"], intensity=row["intensity"])
 
-    counts = {r["name"]: 0 for r in reactions}
+    counts = {r["id"]: 0 for r in reactions}
     for src in left.to_dict("records"):
         src_id = f"A:{src['formula']}" if cross else src["formula"]
         for reaction in reactions:
@@ -204,7 +205,7 @@ def _build_network(df_a, df_b, reactions, mode: str, round_val: int):
                     formula=reaction["formula"],
                     delta=reaction["delta"],
                 )
-                counts[reaction["name"]] += 1
+                counts[reaction["id"]] += 1
     return graph, counts
 
 
@@ -289,14 +290,14 @@ async def analyze_pmd(
     graph, counts = _build_network(df_a, df_b, reactions, mode, round_val)
 
     summary_rows = []
-    reaction_meta = {r["name"]: r for r in reactions}
-    for name, value in counts.items():
-        meta = reaction_meta[name]
+    reaction_meta = {r["id"]: r for r in reactions}
+    for reaction_id, value in counts.items():
+        meta = reaction_meta[reaction_id]
         summary_rows.append({
             "Category": meta["category"],
             "Type": meta["type"],
             "Reaction": meta["formula"],
-            "Name": name,
+            "Name": meta["name"],
             "Value": int(value),
             "Color": meta["color"],
         })

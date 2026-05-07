@@ -271,20 +271,35 @@ def _analyze_dataframe(
     element_df = element_df.loc[:, element_df.sum() != 0]
     data = pd.concat([df.reset_index(drop=True), element_df.reset_index(drop=True)], axis=1)
 
-    if 'N' in element_df.columns and 'C' in element_df.columns:
-        data['N/C'] = data['N'] / data['C'].replace(0, 1)
-    if 'S' in element_df.columns and 'C' in element_df.columns:
-        data['S/C'] = data['S'] / data['C'].replace(0, 1)
+    if 'C' in element_df.columns:
+        carbon = data['C'].replace(0, np.nan)
+        if 'H' in element_df.columns:
+            data['H/C'] = data['H'] / carbon
+        if 'O' in element_df.columns:
+            data['O/C'] = data['O'] / carbon
+        if 'N' in element_df.columns:
+            data['N/C'] = data['N'] / carbon
+        if 'S' in element_df.columns:
+            data['S/C'] = data['S'] / carbon
+        if 'P' in element_df.columns:
+            data['P/C'] = data['P'] / carbon
 
     element_cols_to_exclude = ['C', 'H', 'O', 'N', 'P', 'S']
-    exclude = ['MolForm', 'Col1', 'Col2', 'NewCol'] + element_cols_to_exclude
-    feature_cols = [col for col in data.columns if col not in exclude]
-    X = data[feature_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
+    exclude = {'MolForm', 'Col1', 'Col2', 'NewCol', *element_cols_to_exclude}
+    feature_series = {}
+    feature_name_map = {}
+    for idx, col in enumerate(data.columns):
+        if col in exclude:
+            continue
+        cleaned = _clean_feature_label(col)
+        if cleaned in feature_series:
+            continue
+        feature_series[cleaned] = pd.to_numeric(data.iloc[:, idx], errors='coerce')
+        feature_name_map[str(col)] = cleaned
+    X = pd.DataFrame(feature_series).fillna(0)
     if X.empty:
         raise HTTPException(status_code=400, detail="No numeric feature columns available for machine learning")
-    plot_feature_cols = _deduplicate_feature_labels(feature_cols)
-    feature_name_map = {str(original): cleaned for original, cleaned in zip(feature_cols, plot_feature_cols)}
-    X.columns = plot_feature_cols
+    plot_feature_cols = list(X.columns)
 
     label_encoder = deps["LabelEncoder"]()
     y_encoded = label_encoder.fit_transform(data['NewCol'])

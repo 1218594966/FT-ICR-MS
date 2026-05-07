@@ -255,7 +255,9 @@ def step5_full_search(ctx: PipelineContext, progress_cb: Optional[Callable] = No
     msoDf = ms.to_dataframe()
     ctx.mso_df = msoDf
 
-    assigned = int(msoDf["Molecular Formula"].notna().sum())
+    formula_text = msoDf["Molecular Formula"].where(msoDf["Molecular Formula"].notna(), "").astype(str).str.strip()
+    assigned_mask = (formula_text != "") & (~formula_text.str.lower().isin({"nan", "none", "0"}))
+    assigned = int(assigned_mask.sum())
     total = len(msoDf)
     unassigned = total - assigned
 
@@ -263,7 +265,7 @@ def step5_full_search(ctx: PipelineContext, progress_cb: Optional[Callable] = No
     ppm_arr = np.array(msoDf["m/z Error (ppm)"]).tolist()
     formula_arr = msoDf["Molecular Formula"].fillna("").tolist()
 
-    assigned_df = msoDf[msoDf["Molecular Formula"].notna()].copy()
+    assigned_df = msoDf[assigned_mask].copy()
     oc_arr = []
     hc_arr = []
     elem_cat_arr = []
@@ -327,12 +329,16 @@ def step6_indices_calc(ctx: PipelineContext, progress_cb: Optional[Callable] = N
         if col not in df.columns:
             df[col] = 0
 
+    df = df.copy()
     if "Heteroatom Class" not in df.columns:
         df["Heteroatom Class"] = ""
 
+    formula_text = df["Molecular Formula"].where(df["Molecular Formula"].notna(), "").astype(str).str.strip()
+    hetero_class = df["Heteroatom Class"].where(df["Heteroatom Class"].notna(), "").astype(str).str.strip().str.lower()
+    valid_formula = (formula_text != "") & (~formula_text.str.lower().isin({"nan", "none", "0"}))
+    df = df[valid_formula & (hetero_class != "unassigned")].copy()
+    df["Molecular Formula"] = formula_text.loc[df.index]
     df.fillna(0, inplace=True)
-    df = df[df["Heteroatom Class"] != "unassigned"]
-    df = df[df["Molecular Formula"].notna() & (df["Molecular Formula"] != "")]
 
     if progress_cb:
         progress_cb(6, "分子指标计算", 30)
@@ -453,23 +459,36 @@ def step9_weighted_avg(ctx: PipelineContext, progress_cb: Optional[Callable] = N
         progress_cb(9, "加权平均指标计算", 0)
 
     df = ctx.mso_df
-    df["RI"] = df["Peak Height"] / df["Peak Height"].sum()
+    peak_height = pd.to_numeric(df.get("Peak Height", 0), errors="coerce").replace([np.inf, -np.inf], np.nan).fillna(0).clip(lower=0)
+    total_intensity = float(peak_height.sum())
 
     cols_to_weight = [
         "O/C", "H/C", "N/C", "S/C", "P/C", "AImod", "NOSC",
         "DBE-O", "DBE/C", "DBE/H", "DBE/O", "DBE",
     ]
     weighted = {}
+    if total_intensity <= 0:
+        df["RI"] = 0.0
+        for col in cols_to_weight:
+            if col in df.columns:
+                weighted[col + "_w"] = None
+        ctx.mso_df = df
+        if progress_cb:
+            progress_cb(9, "加权平均指标计算", 100)
+        return {"weighted_averages": weighted, "total_intensity": 0.0}
+
+    df["RI"] = peak_height / total_intensity
     for col in cols_to_weight:
         if col in df.columns:
-            weighted[col + "_w"] = float((df[col] * df["RI"]).sum())
+            values = pd.to_numeric(df[col], errors="coerce").replace([np.inf, -np.inf], np.nan).fillna(0)
+            weighted[col + "_w"] = float((values * df["RI"]).sum())
 
     ctx.mso_df = df
 
     if progress_cb:
         progress_cb(9, "加权平均指标计算", 100)
 
-    return {"weighted_averages": weighted}
+    return {"weighted_averages": weighted, "total_intensity": total_intensity}
 
 
 class AnalysisPipeline:

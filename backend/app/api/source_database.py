@@ -451,7 +451,7 @@ async def compare_dpr_with_database(
     }
 
     source_file_sets = [set(source.get("formulas") or []) for source in (item.files or []) if source.get("formulas")]
-    source_common = set.intersection(*source_file_sets) if source_file_sets else set()
+    source_common = set.intersection(*source_file_sets) if len(source_file_sets) >= 2 else set()
     core = (upstream & downstream & source_common) if remove_core and source_common else set()
     if core:
         upstream -= core
