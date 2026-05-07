@@ -140,6 +140,9 @@
         <el-tag type="info" class="tag-item">{{ text.testRows }}: {{ result.test_row_count }}</el-tag>
         <el-tag type="info" class="tag-item">{{ text.modelFitTime }}: {{ result.model_fit_seconds }}s</el-tag>
         <el-tag type="info" class="tag-item">{{ text.shapTime }}: {{ result.shap_seconds }}s</el-tag>
+        <el-tag type="info" class="tag-item">{{ text.gridCv }}: {{ result.grid_search_cv }}</el-tag>
+        <el-tag type="info" class="tag-item">{{ text.gridCandidates }}: {{ result.grid_search_candidates }}</el-tag>
+        <el-tag type="success" class="tag-item">{{ text.bestCvScore }}: {{ result.best_cv_score }}</el-tag>
       </div>
 
       <div class="info-block">
@@ -205,7 +208,7 @@ const { lang } = useI18n()
 const dictionary = {
   en: {
     title: 'Machine Learning SHAP Analysis',
-    subtitle: 'Choose a DPR result file from Data Analysis, or upload a CSV, then run XGBoost classification and SHAP interpretation.',
+    subtitle: 'Choose a DPR result file from Data Analysis, or upload a CSV, then run XGBoost GridSearchCV classification and SHAP interpretation.',
     selectData: 'Select Data File',
     historyPlaceholder: 'Choose a DPR result from history',
     refresh: 'Refresh',
@@ -248,6 +251,9 @@ const dictionary = {
     testRows: 'Test rows',
     modelFitTime: 'Model fit time',
     shapTime: 'SHAP time',
+    gridCv: 'GridSearchCV folds',
+    gridCandidates: 'Grid candidates',
+    bestCvScore: 'Best CV accuracy',
     modelParams: 'Model Parameters',
     testReport: 'Test Report',
     trainReport: 'Train Report',
@@ -305,6 +311,9 @@ const dictionary = {
     testRows: '测试行数',
     modelFitTime: '模型训练耗时',
     shapTime: 'SHAP 计算耗时',
+    gridCv: 'GridSearchCV 折数',
+    gridCandidates: '网格候选数',
+    bestCvScore: '最佳交叉验证准确率',
     modelParams: '模型参数',
     testReport: '测试集分类报告',
     trainReport: '训练集分类报告',

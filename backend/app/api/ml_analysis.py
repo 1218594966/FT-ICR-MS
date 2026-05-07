@@ -129,7 +129,7 @@ def _load_ml_deps():
         import shap
         import xgboost
         from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-        from sklearn.model_selection import train_test_split
+        from sklearn.model_selection import GridSearchCV, train_test_split
         from sklearn.preprocessing import LabelEncoder
     except ImportError as e:
         raise HTTPException(
@@ -142,6 +142,7 @@ def _load_ml_deps():
         "accuracy_score": accuracy_score,
         "classification_report": classification_report,
         "confusion_matrix": confusion_matrix,
+        "GridSearchCV": GridSearchCV,
         "train_test_split": train_test_split,
         "LabelEncoder": LabelEncoder,
     }
@@ -323,12 +324,6 @@ def _analyze_dataframe(
     model_kwargs = {
         "random_state": 42,
         "eval_metric": "mlogloss" if num_classes > 2 else "logloss",
-        "n_jobs": 2,
-        "max_depth": 3,
-        "learning_rate": 0.08,
-        "n_estimators": 120,
-        "subsample": 0.9,
-        "colsample_bytree": 0.9,
     }
     if num_classes > 2:
         model_kwargs.update({"objective": "multi:softprob", "num_class": num_classes})
@@ -336,17 +331,36 @@ def _analyze_dataframe(
         model_kwargs.update({"objective": "binary:logistic"})
     xgb_classifier = deps["xgboost"].XGBClassifier(**model_kwargs)
 
-    best_model = xgb_classifier
-    fit_start = time.perf_counter()
-    best_model.fit(X_train, y_train)
-    fit_seconds = round(time.perf_counter() - fit_start, 4)
-    best_params = {
-        "max_depth": best_model.max_depth,
-        "learning_rate": best_model.learning_rate,
-        "n_estimators": best_model.n_estimators,
-        "subsample": best_model.subsample,
-        "colsample_bytree": best_model.colsample_bytree,
+    param_grid = {
+        "max_depth": [3, 5, 7],
+        "learning_rate": [0.1, 0.2],
+        "n_estimators": [100, 200],
+        "gamma": [0, 0.1],
+        "subsample": [0.8, 1.0],
+        "colsample_bytree": [0.8, 1.0],
     }
+    train_class_counts = np.bincount(y_train, minlength=num_classes)
+    cv_folds = min(5, int(train_class_counts.min()))
+    if cv_folds < 2:
+        raise HTTPException(
+            status_code=400,
+            detail="Not enough training rows per class for cross-validation grid search",
+        )
+    candidate_count = int(np.prod([len(values) for values in param_grid.values()]))
+    grid_search = deps["GridSearchCV"](
+        estimator=xgb_classifier,
+        param_grid=param_grid,
+        cv=cv_folds,
+        scoring="accuracy",
+        n_jobs=-1,
+        verbose=0,
+    )
+    fit_start = time.perf_counter()
+    grid_search.fit(X_train, y_train)
+    fit_seconds = round(time.perf_counter() - fit_start, 4)
+    best_model = grid_search.best_estimator_
+    best_params = {str(key): value for key, value in grid_search.best_params_.items()}
+    best_cv_score = round(float(grid_search.best_score_), 4)
 
     y_pred = best_model.predict(X_test)
     y_pred_train = best_model.predict(X_train)
@@ -420,6 +434,9 @@ def _analyze_dataframe(
         "shap_row_count": int(len(X_shap)),
         "model_fit_seconds": fit_seconds,
         "shap_seconds": shap_seconds,
+        "grid_search_cv": int(cv_folds),
+        "grid_search_candidates": int(candidate_count),
+        "best_cv_score": best_cv_score,
         "accuracy_test": round(float(accuracy), 4),
         "accuracy_train": round(float(accuracy_train), 4),
         "best_params": best_params,
