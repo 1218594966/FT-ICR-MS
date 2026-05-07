@@ -1,115 +1,156 @@
-# FT-ICR MS Web 分析平台
+# FT-ICR MS Molecular Intelligence Platform
 
-基于 FastAPI + Vue 3 的 FT-ICR MS 数据分析平台，支持常规分析、DPR 数据分析、批量处理、分子数据库创建与对比、机器学习和 SHAP 分析。
+A web-based analytical platform for Fourier transform ion cyclotron resonance mass spectrometry (FT-ICR MS) data. The system integrates molecular formula curation, Van Krevelen visualization, DPR fate analysis, molecular source-database comparison, PMD reaction-network construction, batch processing, and XGBoost-SHAP machine-learning interpretation in a reproducible browser workflow.
 
-## 功能
+The project is designed for research scenarios in dissolved organic matter, environmental molecular characterization, molecular transformation inference, and comparative source analysis. It provides deployable full-stack software with Docker and non-Docker Linux deployment scripts.
 
-- 原始质谱数据常规分析、历史记录管理和结果导出
-- 常规分析 CSV 导入补齐指标列
-- 批量上传常规分析 CSV，批量生成 Van Krevelen 图、PDF ZIP 和加权平均 Excel
-- DPR 数据分析、DPR 图和热图导出
-- 分子数据库创建、追加、删除、下载和样品对比
-- PMD 单样本/双样本反应网络分析，支持 GraphML/GEXF、反应统计 CSV、雷达图 PDF，并支持默认反应或自定义反应
-- XGBoost 机器学习分析，支持二分类/三分类
-- SHAP 二分类/三分类解释，支持选择解释类别和 SHAP 数据集
-- 中英文界面切换，默认英文
+## Core Capabilities
 
-## 本地开发
+- Conventional FT-ICR MS data processing with molecular index completion, filtering, history management, and export.
+- Batch processing for multiple conventional analysis files, including synchronized Van Krevelen plots, editable PDF exports, and weighted-average summary tables.
+- DPR fate analysis for disappearance, persistence/resistance, and production categories, with DPR-specific plots, heatmaps, and downloadable result files.
+- Molecular source-database construction from arbitrary grouped files, with database download, deletion, and sample-to-database comparison.
+- Two-sample DPR/database comparison, including D/P/R grouping and chi-square contingency analysis.
+- PMD analysis for single-sample and cross-sample putative molecular reaction networks, with customizable reaction dictionaries and GraphML/GEXF export.
+- XGBoost machine-learning classification for binary and three-class DPR tasks, trained with GridSearchCV and interpreted by SHAP.
+- Editable vector PDF output using embedded TrueType/Type 42 fonts where Matplotlib is used.
+- English/Chinese interface switching, light/dark themes, and browser-based operation.
 
-后端：
+## Analytical Scope
 
-```bash
-cd backend
-python -m venv ../.venv
-../.venv/bin/pip install -r requirements.txt
-../.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8001
+This platform is intended to support molecular-level exploratory analysis and hypothesis generation. The implemented workflows should be interpreted with standard domain caution:
+
+- Van Krevelen and elemental-class plots describe molecular compositional space.
+- DPR analysis compares molecular presence/absence patterns between paired samples.
+- Source-database comparison quantifies molecular overlap and group-level enrichment rather than proving absolute source attribution.
+- PMD networks represent putative formula-difference relationships based on predefined reaction mass differences; edges indicate plausible transformations, not direct experimental proof of reaction occurrence.
+- SHAP values explain the trained XGBoost model output and should not be interpreted as causal effects without independent validation.
+
+## Machine Learning Method
+
+The machine-learning module follows a supervised classification workflow:
+
+1. Molecular formulas are parsed into elemental counts and derived ratio features.
+2. Numeric molecular descriptors are used as model features.
+3. Class labels are read from `NewCol`, supporting binary classification or three-class DPR classification.
+4. Data are split into stratified training and test sets.
+5. XGBoost is optimized using `GridSearchCV` with accuracy scoring.
+6. Independent test-set metrics, training metrics, confusion matrices, correlation matrices, and SHAP plots are generated.
+
+The current parameter grid follows the reference workflow:
+
+```python
+{
+    "max_depth": [3, 5, 7],
+    "learning_rate": [0.1, 0.2],
+    "n_estimators": [100, 200],
+    "gamma": [0, 0.1],
+    "subsample": [0.8, 1.0],
+    "colsample_bytree": [0.8, 1.0],
+}
 ```
 
-前端：
+For sufficiently populated classes, five-fold cross-validation is used. When a selected class has fewer training samples than five, the number of folds is reduced to the maximum valid value to avoid invalid cross-validation splits.
+
+## PMD Reaction-Network Analysis
+
+The PMD module constructs putative reaction networks from exact molecular formula mass differences. It supports:
+
+- Single-sample reaction networks.
+- Cross-sample reaction networks.
+- PageRank and peak-intensity node annotations where applicable.
+- GraphML and GEXF exports for Cytoscape, Gephi, and other network tools.
+- Reaction-count CSV export.
+- Radar-style reaction summary plots.
+- Default and user-defined reaction classes, signs, formulas, names, and colors.
+
+The default reaction dictionary includes representative transformations such as decarboxylation, methylation/demethylation, hydrogenation/dehydrogenation, hydration/dehydration, oxidation/reduction, sulfate-related reactions, nitration/denitration, amination/deamination, and dealkylation reactions.
+
+## Source-Database Analysis
+
+The molecular source-database module allows users to create databases from arbitrary groups of uploaded files. For example, several reclaimed-water samples can be merged into a single reclaimed-water molecular database. A new sample or a paired DPR comparison can then be evaluated against that database.
+
+Implemented outputs include:
+
+- Database molecular inventory.
+- Source-file contribution table.
+- Sample/database molecular overlap categories.
+- Elemental-class distribution across overlap, sample-only, and database-only molecules.
+- DPR fate versus database-presence contingency analysis.
+- Chi-square tests and heatmap visualization for group-level association.
+
+The analysis is designed to quantify molecular compositional association. It should be reported as evidence of overlap or enrichment, not as deterministic source apportionment.
+
+## Deployment
+
+The repository supports both Docker and non-Docker Linux deployment.
+
+### Docker Deployment
+
+Recommended for servers because all Python and Node dependencies are built inside containers.
 
 ```bash
-cd frontend
-npm install
-npm run dev -- --host 0.0.0.0
-```
-
-本地访问：
-
-- 前端：http://localhost:3000
-- 后端 API：http://localhost:8001
-- API 文档：http://localhost:8001/docs
-
-## Linux 服务器一键部署
-
-### 方案 A：Docker 部署
-
-服务器需要安装 Git、Docker 和 Docker Compose。Python、Node、Python 包、前端依赖都由 Docker 自动安装。
-
-```bash
-git clone <你的 GitHub 仓库地址> fticrms-web
-cd fticrms-web
+git clone https://github.com/1218594966/FT-ICR-MS.git
+cd FT-ICR-MS
 chmod +x deploy/deploy.sh
 ./deploy/deploy.sh
 ```
 
-访问：
+Default access:
 
 ```text
 http://<server-ip>:8080
 ```
 
-Docker 默认将前端暴露到服务器 `8080` 端口，即 `8080:80`。如果 8080 被占用，可以修改 `deploy/docker-compose.yml` 里的端口映射。
-
-如果你用宝塔/1Panel/Nginx 做反向代理，建议代理到：
+If the server uses a panel such as 1Panel or an external Nginx reverse proxy, proxy the domain to:
 
 ```text
 http://127.0.0.1:8080
 ```
 
-### 方案 B：非 Docker 部署
+### Non-Docker Deployment
 
-最低要求：Git、Python 3.10+、python3-venv。
-
-如果服务器有 Node.js/npm，脚本会自动安装前端依赖并重新构建前端；如果没有 npm，则使用仓库中已经构建好的 `frontend/dist`，服务器不需要安装 Node。
+Use this when Docker is not available. The server should provide Git and Python 3.10+. If Node.js/npm is available, the frontend can be rebuilt during deployment; otherwise the committed `frontend/dist` build is served directly.
 
 ```bash
-git clone <你的 GitHub 仓库地址> fticrms-web
-cd fticrms-web
+git clone https://github.com/1218594966/FT-ICR-MS.git
+cd FT-ICR-MS
 chmod +x deploy/deploy-linux.sh deploy/stop-linux.sh
 PORT=8000 ./deploy/deploy-linux.sh
 ```
 
-访问：
+Default access:
 
 ```text
 http://<server-ip>:8000
 ```
 
-停止：
+Stop the non-Docker service:
 
 ```bash
 ./deploy/stop-linux.sh
 ```
 
-## 常用命令
+## Server Update
 
-同步更新到 GitHub：
+For Docker deployments:
 
 ```bash
-git status
-git add -A
-git commit -m "update"
-git push
+cd ~/FT-ICR-MS
+git pull
+cd deploy
+docker compose up -d --build
 ```
 
-服务器拉取最新版本：
+For non-Docker deployments:
 
 ```bash
+cd ~/FT-ICR-MS
 git pull
 PORT=8000 ./deploy/deploy-linux.sh
 ```
 
-如果服务器提示 `Your local changes to the following files would be overwritten by merge`，通常是服务器上临时修改过部署文件。确认不需要保留服务器本地改动时，可执行：
+If `git pull` reports that local deployment files would be overwritten, and the server-side edits do not need to be preserved:
 
 ```bash
 cd ~/FT-ICR-MS
@@ -119,55 +160,49 @@ cd deploy
 docker compose up -d --build
 ```
 
-Docker 查看日志：
+## Logs
+
+Docker logs:
 
 ```bash
 docker compose -f deploy/docker-compose.yml logs -f
 ```
 
-Docker 停止服务：
-
-```bash
-docker compose -f deploy/docker-compose.yml down
-```
-
-非 Docker 查看日志：
+Non-Docker logs:
 
 ```bash
 tail -f logs/server.log logs/server.err.log
 ```
 
-## 服务器字体
+## Fonts and Editable PDF Output
 
-Docker 镜像会自动安装 Times 兼容字体和 Noto CJK 字体，避免 Linux 服务器生成图表时退回默认字体或中文显示方框。
+The Docker image installs Times-compatible serif fonts and Noto CJK fonts to avoid missing glyphs on Linux servers. Matplotlib PDF outputs are configured to embed TrueType/Type 42 fonts, making text more likely to remain selectable and editable in professional PDF editors.
 
-真正的 Times New Roman 属于微软字体，仓库不会直接携带。若需要服务器输出完全等同 Windows 的 Times New Roman，请将合法授权的 `times.ttf`、`timesbd.ttf`、`timesi.ttf`、`timesbi.ttf` 放入 `backend/app/fonts/` 后重新构建 Docker。没有这些字体时，系统会优先使用 Tinos/Liberation Serif 作为 Times New Roman 的 Linux 替代字体。
-
-## PMD 分析说明
-
-PMD 页面里的“质量匹配小数位 / Mass decimals”用于控制反应质量差匹配精度。例如默认值 `8` 表示把分子精确质量四舍五入到 8 位小数后，再匹配 `+O`、`-CO2`、`-CH2` 等反应质量差。数值越大匹配越严格，通常保持 `8` 即可。
-
-PMD 默认反应包含：
-
-- Carboxylic acid：`-CO`、`-CO2`、`-CH2O`
-- Oxygen addition：`+O`、`+O2`、`+O3`、`+H2O`、`+H2O2`
-- Other reactions：`-H2O`、`+H2`、`-H2`
-- Sulfate：`-S`、`-SO`、`-SO2`、`-SO3`
-- Amine：`-NH3`、`-NH`
-- Dealkyl：`-CH2`、`-C2H2`、`-C2H4`、`-C3H6`
-
-页面支持直接编辑反应分类、正负号、反应式、名称和颜色，也可以新增自定义反应或停用不需要的默认反应。
-
-## 机器学习和 SHAP
-
-机器学习模块使用 XGBoost 分类器。模型始终用训练集训练，页面可选择 SHAP 解释训练集、测试集或全部数据；二分类和三分类都支持选择目标类别。SHAP 正值表示特征把模型输出推向当前选择的目标类别，负值表示远离该目标类别。
-
-SHAP 图、相关性矩阵、混淆矩阵和数据库热图都会调用统一 Matplotlib 字体配置：英文优先 Times New Roman/Tinos/Liberation Serif，中文使用 Noto CJK 等中文字体，避免 Linux 服务器中文方框。
-
-## 目录结构
+Microsoft Times New Roman is not bundled because it is proprietary. To obtain exact Times New Roman output on Linux, place legally licensed font files such as `times.ttf`, `timesbd.ttf`, `timesi.ttf`, and `timesbi.ttf` into:
 
 ```text
-backend/   FastAPI 后端、分析 pipeline、数据库模型和 API
-frontend/  Vue 3 前端；dist 可用于无 Node.js 的服务器部署
-deploy/    Docker 和 Linux 部署脚本
+backend/app/fonts/
 ```
+
+Then rebuild the deployment.
+
+## Repository Structure
+
+```text
+backend/    FastAPI backend, analytical APIs, database models, and processing logic
+frontend/   Vue 3 frontend and production build artifacts
+deploy/     Docker and Linux deployment scripts
+```
+
+## Citation and Research Use
+
+When using this platform in academic work, report the analytical assumptions and parameter settings used in each module. In particular, specify:
+
+- FT-ICR MS preprocessing and filtering criteria.
+- Elemental classes included in visualization and batch processing.
+- DPR category definitions.
+- PMD reaction dictionary and mass matching precision.
+- Machine-learning feature set, class labels, train/test split, GridSearchCV parameter grid, cross-validation folds, and evaluation metrics.
+- SHAP target class and SHAP explanation dataset.
+
+The platform is intended to make molecular-level workflows reproducible, inspectable, and deployable. Scientific conclusions should be supported by appropriate experimental design, statistical reporting, and domain interpretation.
