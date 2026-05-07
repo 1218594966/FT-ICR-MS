@@ -41,7 +41,7 @@ def register_project_fonts() -> set[str]:
     return {font.name for font in font_manager.fontManager.ttflist}
 
 
-def configure_matplotlib_fonts(font_family: str = "Times New Roman", pdf_fonttype: int = 3):
+def configure_matplotlib_fonts(font_family: str = "Times New Roman", pdf_fonttype: int = 42):
     available = register_project_fonts()
 
     preferred = [font_family] if font_family else []

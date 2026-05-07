@@ -215,7 +215,7 @@ def _format_label(sign, formula):
 
 
 def _radar_figure(summary_df):
-    configure_matplotlib_fonts("Times New Roman", pdf_fonttype=3)
+    configure_matplotlib_fonts("Times New Roman", pdf_fonttype=42)
     values = summary_df["Value"].astype(int).tolist()
     labels = [_format_label(row["Type"], row["Reaction"]) for _, row in summary_df.iterrows()]
     base_labels = (summary_df["Type"].astype(str) + "_" + summary_df["Reaction"].astype(str)).tolist()

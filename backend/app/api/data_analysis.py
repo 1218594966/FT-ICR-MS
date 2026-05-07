@@ -184,7 +184,7 @@ def _draw_dpr_figure(
 ):
     df = _load_dpr_dataframe(session_id, filename)
 
-    configure_matplotlib_fonts(font_family or 'Times New Roman', pdf_fonttype=3)
+    configure_matplotlib_fonts(font_family or 'Times New Roman', pdf_fonttype=42)
 
     fs = {
         'axes_labels': font_size, 'tick_labels': font_size - 2,
@@ -547,7 +547,7 @@ def export_dpr_pdf(
     cat_map = {0: 'Disappearance', 1: 'Resistant', 2: 'Product'}
     df['molecule_category'] = df['value'].map(cat_map)
 
-    configure_matplotlib_fonts('Times New Roman', pdf_fonttype=3)
+    configure_matplotlib_fonts('Times New Roman', pdf_fonttype=42)
 
     fs = {
         'axes_labels': font_size, 'tick_labels': font_size - 2,
@@ -686,7 +686,7 @@ def export_dpr_tif(
     cat_map = {0: 'Disappearance', 1: 'Resistant', 2: 'Product'}
     df['molecule_category'] = df['value'].map(cat_map)
 
-    configure_matplotlib_fonts('Times New Roman', pdf_fonttype=3)
+    configure_matplotlib_fonts('Times New Roman', pdf_fonttype=42)
 
     fs = {'axes_labels': font_size, 'tick_labels': font_size - 2, 'legend': font_size - 2,
           'panel_labels': font_size, 'hist_tick_labels': font_size - 2}

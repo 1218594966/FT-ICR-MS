@@ -121,7 +121,7 @@ def _fig_to_pdf_base64(fig):
 
 
 def _configure_plot_fonts():
-    configure_matplotlib_fonts("Times New Roman", pdf_fonttype=3)
+    configure_matplotlib_fonts("Times New Roman", pdf_fonttype=42)
 
 
 def _heatmap(data, row_labels, title, p_value=None, output_format="png"):

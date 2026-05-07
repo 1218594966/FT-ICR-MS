@@ -136,6 +136,10 @@
         </el-tag>
         <el-tag type="warning" class="tag-item">{{ text.shapPositive }}: {{ result.shap_target_class }}</el-tag>
         <el-tag type="warning" class="tag-item">{{ text.shapRows }}: {{ result.shap_dataset_label }} ({{ result.shap_row_count }})</el-tag>
+        <el-tag type="info" class="tag-item">{{ text.trainRows }}: {{ result.train_row_count }}</el-tag>
+        <el-tag type="info" class="tag-item">{{ text.testRows }}: {{ result.test_row_count }}</el-tag>
+        <el-tag type="info" class="tag-item">{{ text.modelFitTime }}: {{ result.model_fit_seconds }}s</el-tag>
+        <el-tag type="info" class="tag-item">{{ text.shapTime }}: {{ result.shap_seconds }}s</el-tag>
       </div>
 
       <div class="info-block">
@@ -240,6 +244,10 @@ const dictionary = {
     labelMapping: 'Label Mapping',
     shapPositive: 'SHAP positive class',
     shapRows: 'SHAP rows',
+    trainRows: 'Train rows',
+    testRows: 'Test rows',
+    modelFitTime: 'Model fit time',
+    shapTime: 'SHAP time',
     modelParams: 'Model Parameters',
     testReport: 'Test Report',
     trainReport: 'Train Report',
@@ -293,6 +301,10 @@ const dictionary = {
     labelMapping: '标签编码映射',
     shapPositive: 'SHAP 正向类别',
     shapRows: 'SHAP 数据行数',
+    trainRows: '训练行数',
+    testRows: '测试行数',
+    modelFitTime: '模型训练耗时',
+    shapTime: 'SHAP 计算耗时',
     modelParams: '模型参数',
     testReport: '测试集分类报告',
     trainReport: '训练集分类报告',

@@ -4,6 +4,7 @@ import json
 import math
 import os
 import re
+import time
 import unicodedata
 from pathlib import Path
 from typing import List, Optional
@@ -24,7 +25,7 @@ router = APIRouter(prefix="/api/ml", tags=["ml-analysis"])
 
 
 def _configure_ml_plot_fonts():
-    configure_matplotlib_fonts("Times New Roman", pdf_fonttype=3)
+    configure_matplotlib_fonts("Times New Roman", pdf_fonttype=42)
 
 
 def _clean_feature_label(label) -> str:
@@ -336,7 +337,9 @@ def _analyze_dataframe(
     xgb_classifier = deps["xgboost"].XGBClassifier(**model_kwargs)
 
     best_model = xgb_classifier
+    fit_start = time.perf_counter()
     best_model.fit(X_train, y_train)
+    fit_seconds = round(time.perf_counter() - fit_start, 4)
     best_params = {
         "max_depth": best_model.max_depth,
         "learning_rate": best_model.learning_rate,
@@ -395,9 +398,11 @@ def _analyze_dataframe(
     plots['confusion'] = conf_outputs["png"]
     plot_pdfs['confusion'] = conf_outputs["pdf"]
 
+    shap_start = time.perf_counter()
     shap_outputs = _figure_to_outputs(_build_shap_plot(
         deps["shap"], best_model, X_train, X_shap, shap_target_index, shap_target_class, num_classes, shap_dataset_plot_label
     ))
+    shap_seconds = round(time.perf_counter() - shap_start, 4)
     plots['shap'] = shap_outputs["png"]
     plot_pdfs['shap'] = shap_outputs["pdf"]
 
@@ -410,7 +415,11 @@ def _analyze_dataframe(
         "shap_target_index": shap_target_index,
         "shap_dataset": shap_dataset_key,
         "shap_dataset_label": shap_dataset_label,
+        "train_row_count": int(len(X_train)),
+        "test_row_count": int(len(X_test)),
         "shap_row_count": int(len(X_shap)),
+        "model_fit_seconds": fit_seconds,
+        "shap_seconds": shap_seconds,
         "accuracy_test": round(float(accuracy), 4),
         "accuracy_train": round(float(accuracy_train), 4),
         "best_params": best_params,

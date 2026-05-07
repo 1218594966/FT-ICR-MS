@@ -112,7 +112,7 @@ def _get_color_map(custom_colors: str = None):
 
 
 def _set_vector_font(font_size: int, scale: float):
-    configure_matplotlib_fonts("Times New Roman", pdf_fonttype=3)
+    configure_matplotlib_fonts("Times New Roman", pdf_fonttype=42)
     return font_size * scale
 
 
