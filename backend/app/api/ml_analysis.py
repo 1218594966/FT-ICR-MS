@@ -483,8 +483,8 @@ def list_dpr_files(db: Session = Depends(get_db)):
 @router.post("/inspect")
 async def inspect_ml_file(file: UploadFile = File(...), db: Session = Depends(get_db)):
     try:
-        content = await file.read()
-        df = _read_csv_auto(io.BytesIO(content))
+        await file.seek(0)
+        df = _read_csv_auto(file.file)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to read CSV: {str(e)}")
     return {"source_name": file.filename or "uploaded.csv", "classes": _class_summary(df)}
@@ -516,8 +516,8 @@ async def run_ml_analysis(
     db: Session = Depends(get_db),
 ):
     try:
-        content = await file.read()
-        df = _read_csv_auto(io.BytesIO(content))
+        await file.seek(0)
+        df = _read_csv_auto(file.file)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to read CSV: {str(e)}")
     return _analyze_dataframe(

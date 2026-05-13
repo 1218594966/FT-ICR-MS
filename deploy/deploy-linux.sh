@@ -58,7 +58,7 @@ if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" >/dev/null 2>&1; then
 fi
 
 cd "$BACKEND_DIR"
-nohup "$VENV_DIR/bin/python" -m uvicorn app.main:app --host "$HOST" --port "$PORT" --workers 1 \
+nohup "$VENV_DIR/bin/python" -m uvicorn app.main:app --host "$HOST" --port "$PORT" --workers 1 --timeout-keep-alive 7200 \
   > "$LOG_DIR/server.log" 2> "$LOG_DIR/server.err.log" &
 echo $! > "$PID_FILE"
 

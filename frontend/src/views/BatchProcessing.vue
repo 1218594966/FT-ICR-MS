@@ -241,7 +241,7 @@ async function runBatch() {
   try {
     const data = await api.post('/batch/regular-analysis', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 900000,
+      timeout: 0,
     })
     result.value = data
     if (data.success) {

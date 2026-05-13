@@ -59,9 +59,9 @@ def _find_intensity_col(df):
 
 
 async def _read_molecule_map(file: UploadFile):
-    content = await file.read()
     try:
-        df = _read_csv_auto(io.BytesIO(content))
+        await file.seek(0)
+        df = _read_csv_auto(file.file)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Failed to read {file.filename}: {exc}")
 

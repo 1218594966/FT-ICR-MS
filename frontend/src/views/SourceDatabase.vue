@@ -593,7 +593,7 @@ async function buildDatabase() {
     fd.append('description', description.value || '')
     buildResult.value = await api.post('/source-db/databases', fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 600000,
+      timeout: 0,
     })
     ElMessage.success(text.value.dbUpdated)
     buildFiles.value = []
@@ -615,7 +615,7 @@ async function compareDatabase() {
     fd.append('query_file', compareFile.value)
     compareResult.value = await api.post('/source-db/compare', fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 600000,
+      timeout: 0,
     })
     ElMessage.success(text.value.compareComplete)
   } catch (e) {
@@ -637,7 +637,7 @@ async function runDprDatabase() {
     fd.append('remove_core', dprRemoveCore.value ? 'true' : 'false')
     dprResult.value = await api.post('/source-db/compare-dpr', fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 600000,
+      timeout: 0,
     })
     ElMessage.success(text.value.dprComplete)
   } catch (e) {

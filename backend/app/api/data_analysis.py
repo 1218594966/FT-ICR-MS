@@ -3,6 +3,7 @@ import io
 import re
 import uuid
 import math
+import shutil
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -448,8 +449,9 @@ async def upload_dpr_csv(file: UploadFile = File(...)):
     session_dir.mkdir(parents=True, exist_ok=True)
     filename = Path(file.filename or "dpr.csv").name
     fpath = session_dir / filename
+    await file.seek(0)
     with open(fpath, "wb") as f:
-        f.write(await file.read())
+        shutil.copyfileobj(file.file, f)
     return {"session_id": session_id, "filename": filename, "path": str(fpath)}
 
 

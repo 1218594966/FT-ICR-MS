@@ -1,22 +1,24 @@
 import api from './index'
 
-export function uploadDataFile(file) {
+export function uploadDataFile(file, onUploadProgress) {
   const fd = new FormData()
   fd.append('file', file)
   return api.post('/upload/data', fd, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 1800000,
+    timeout: 0,
+    onUploadProgress,
   })
 }
 
-export function uploadFolder(files) {
+export function uploadFolder(files, onUploadProgress) {
   const fd = new FormData()
   for (const f of files) {
     fd.append('files', f, f.webkitRelativePath || f.name)
   }
   return api.post('/upload/folder', fd, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 1800000,
+    timeout: 0,
+    onUploadProgress,
   })
 }
 

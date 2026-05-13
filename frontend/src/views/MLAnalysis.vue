@@ -466,7 +466,7 @@ async function inspectClasses() {
     } else {
       const fd = new FormData()
       fd.append('file', file.value)
-      res = await api.post('/ml/inspect', fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 1800000 })
+      res = await api.post('/ml/inspect', fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 0 })
     }
     applyClassOptions(res.classes || [])
     if (!classOptions.value.length && selectedTaskId.value && applyCachedClasses()) return
@@ -490,10 +490,10 @@ async function runAnalysis() {
     fd.append('shap_dataset', shapDataset.value)
     let res
     if (selectedTaskId.value) {
-      res = await api.post(`/ml/analyze-task/${selectedTaskId.value}`, fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 1800000 })
+      res = await api.post(`/ml/analyze-task/${selectedTaskId.value}`, fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 0 })
     } else {
       fd.append('file', file.value)
-      res = await api.post('/ml/analyze', fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 1800000 })
+      res = await api.post('/ml/analyze', fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 0 })
     }
     result.value = res
     ElMessage.success(text.value.complete)

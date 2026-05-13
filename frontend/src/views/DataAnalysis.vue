@@ -184,7 +184,7 @@ async function processFiles() {
     const fd = new FormData()
     fd.append('file1', file1.value)
     fd.append('file2', file2.value)
-    const res = await api.post('/data-analysis/process', fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 600000 })
+    const res = await api.post('/data-analysis/process', fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 0 })
     result.value = res
     dprSessionId.value = res.session_id
     dprFilename.value = res.final_file

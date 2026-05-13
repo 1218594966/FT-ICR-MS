@@ -449,13 +449,14 @@ async function doFolderUpload(files) {
   uploading.value = true
   uploadProgress.value = 0
   try {
-    const progressTimer = setInterval(() => { if (uploadProgress.value < 90) uploadProgress.value += 10 }, 300)
-    const res = await uploadFolder(files)
-    clearInterval(progressTimer)
+    const res = await uploadFolder(files, updateUploadProgress)
     uploadProgress.value = 100
     uploadedFiles.value.push(res)
     ElMessage.success(`${text.value.uploadSuccess}: ${res.filename} (${res.file_count} ${text.value.files})`)
-  } catch (e) { ElMessage.error(`${text.value.uploadFailed}: ` + e.message) }
+  } catch (e) {
+    uploadProgress.value = 0
+    ElMessage.error(`${text.value.uploadFailed}: ` + e.message)
+  }
   finally { uploading.value = false }
 }
 
@@ -479,14 +480,23 @@ async function doZipUpload(file) {
   uploading.value = true
   uploadProgress.value = 0
   try {
-    const progressTimer = setInterval(() => { if (uploadProgress.value < 90) uploadProgress.value += 10 }, 300)
-    const res = await uploadDataFile(file)
-    clearInterval(progressTimer)
+    const res = await uploadDataFile(file, updateUploadProgress)
     uploadProgress.value = 100
     uploadedFiles.value.push(res)
     ElMessage.success(`${text.value.uploadSuccess}: ${res.filename}`)
-  } catch (e) { ElMessage.error(`${text.value.uploadFailed}: ` + e.message) }
+  } catch (e) {
+    uploadProgress.value = 0
+    ElMessage.error(`${text.value.uploadFailed}: ` + e.message)
+  }
   finally { uploading.value = false }
+}
+
+function updateUploadProgress(event) {
+  if (!event.total) {
+    uploadProgress.value = Math.max(uploadProgress.value, 1)
+    return
+  }
+  uploadProgress.value = Math.max(1, Math.min(99, Math.round((event.loaded / event.total) * 100)))
 }
 
 function resetParams() {

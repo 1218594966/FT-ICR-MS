@@ -251,7 +251,7 @@ async function handleImportCsv(event) {
   try {
     const res = await api.post('/history/import-analysis-csv', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 600000,
+      timeout: 0,
     })
     typeFilter.value = 'analysis'
     statusFilter.value = 'success'

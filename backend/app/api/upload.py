@@ -8,6 +8,8 @@ from app.config import settings
 
 router = APIRouter(prefix="/api/upload", tags=["upload"])
 
+CHUNK_SIZE = 1024 * 1024
+
 
 def _safe_child(base: Path, relative_path: str) -> Path:
     clean = relative_path.replace("\\", "/").lstrip("/")
@@ -30,6 +32,19 @@ def _extract_zip_safely(zip_path: Path, extract_dir: Path):
                 shutil.copyfileobj(src, out)
 
 
+async def _save_upload_file(file: UploadFile, dest: Path) -> int:
+    size = 0
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with open(dest, "wb") as out:
+        while True:
+            chunk = await file.read(CHUNK_SIZE)
+            if not chunk:
+                break
+            out.write(chunk)
+            size += len(chunk)
+    return size
+
+
 @router.post("/data")
 async def upload_data_file(file: UploadFile = File(...)):
     task_id = str(uuid.uuid4())
@@ -39,9 +54,7 @@ async def upload_data_file(file: UploadFile = File(...)):
     filename = Path(file.filename or "upload").name
     dest = task_dir / filename
 
-    with open(dest, "wb") as f:
-        content = await file.read()
-        f.write(content)
+    size = await _save_upload_file(file, dest)
 
     file_path = str(dest)
     if filename.lower().endswith(".zip"):
@@ -64,7 +77,7 @@ async def upload_data_file(file: UploadFile = File(...)):
         "task_id": task_id,
         "filename": filename,
         "file_path": file_path,
-        "size": len(content),
+        "size": size,
     }
 
 
@@ -85,9 +98,7 @@ async def upload_folder(files: list[UploadFile] = File(...)):
                 d_root_name = parts[0]
         else:
             dest = _safe_child(task_dir, rel_path)
-        with open(dest, "wb") as f:
-            content = await file.read()
-            f.write(content)
+        await _save_upload_file(file, dest)
 
     if d_root_name:
         file_path = str(task_dir / d_root_name)

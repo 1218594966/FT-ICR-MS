@@ -280,7 +280,7 @@ async function run() {
   processing.value = true
   result.value = null
   try {
-    result.value = await api.post('/pmd/analyze', fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 1800000 })
+    result.value = await api.post('/pmd/analyze', fd, { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 0 })
     ElMessage.success(text.value.success)
   } catch (e) {
     ElMessage.error(`${text.value.failed}: ${e.message}`)
