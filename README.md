@@ -88,9 +88,36 @@ The repository supports both Docker and non-Docker Linux deployment.
 ### Docker Deployment
 
 Recommended for servers because all Python and Node dependencies are built inside containers.
-
 ```bash
-git clone https://github.com/1218594966/FT-ICR-MS.git
+#!/bin/bash
+# 清理残留锁文件（如果存在）
+sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/cache/apt/archives/lock
+
+# 安装依赖
+sudo apt update
+sudo apt install -y ca-certificates curl gnupg lsb-release
+
+# 添加阿里云 Docker 镜像源
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://mirrors.aliyun.com/docker-ce/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# 安装 Docker 和 Compose 插件
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+# 启动 Docker 并设置开机自启
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# 验证
+docker compose version
+```
+```bash
+git clone https://gitee.com/xinyuan-xu/FT-ICR-MS.git
 cd FT-ICR-MS
 chmod +x deploy/deploy.sh
 ./deploy/deploy.sh
@@ -113,7 +140,7 @@ http://127.0.0.1:8080
 Use this when Docker is not available. The server should provide Git and Python 3.10+. If Node.js/npm is available, the frontend can be rebuilt during deployment; otherwise the committed `frontend/dist` build is served directly.
 
 ```bash
-git clone https://github.com/1218594966/FT-ICR-MS.git
+git clone https://gitee.com/xinyuan-xu/FT-ICR-MS.git
 cd FT-ICR-MS
 chmod +x deploy/deploy-linux.sh deploy/stop-linux.sh
 PORT=8000 ./deploy/deploy-linux.sh
