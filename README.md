@@ -37,155 +37,60 @@ The machine-learning module follows a supervised classification workflow:
 5. XGBoost is optimized using `GridSearchCV` with accuracy scoring.
 6. Independent test-set metrics, training metrics, confusion matrices, correlation matrices, and SHAP plots are generated.
 
-The current parameter grid follows the reference workflow:
-
-```python
-{
-    "max_depth": [3, 5, 7],
-    "learning_rate": [0.1, 0.2],
-    "n_estimators": [100, 200],
-    "gamma": [0, 0.1],
-    "subsample": [0.8, 1.0],
-    "colsample_bytree": [0.8, 1.0],
-}
-```
-
-For sufficiently populated classes, five-fold cross-validation is used. When a selected class has fewer training samples than five, the number of folds is reduced to the maximum valid value to avoid invalid cross-validation splits.
-
-## PMD Reaction-Network Analysis
-
-The PMD module constructs putative reaction networks from exact molecular formula mass differences. It supports:
-
-- Single-sample reaction networks.
-- Cross-sample reaction networks.
-- PageRank and peak-intensity node annotations where applicable.
-- GraphML and GEXF exports for Cytoscape, Gephi, and other network tools.
-- Reaction-count CSV export.
-- Radar-style reaction summary plots.
-- Default and user-defined reaction classes, signs, formulas, names, and colors.
-
-The default reaction dictionary includes representative transformations such as decarboxylation, methylation/demethylation, hydrogenation/dehydrogenation, hydration/dehydration, oxidation/reduction, sulfate-related reactions, nitration/denitration, amination/deamination, and dealkylation reactions.
-
-## Source-Database Analysis
-
-The molecular source-database module allows users to create databases from arbitrary groups of uploaded files. For example, several reclaimed-water samples can be merged into a single reclaimed-water molecular database. A new sample or a paired DPR comparison can then be evaluated against that database.
-
-Implemented outputs include:
-
-- Database molecular inventory.
-- Source-file contribution table.
-- Sample/database molecular overlap categories.
-- Elemental-class distribution across overlap, sample-only, and database-only molecules.
-- DPR fate versus database-presence contingency analysis.
-- Chi-square tests and heatmap visualization for group-level association.
-
-The analysis is designed to quantify molecular compositional association. It should be reported as evidence of overlap or enrichment, not as deterministic source apportionment.
-
-## Deployment
-
-The repository supports both Docker and non-Docker Linux deployment.
-
-### Docker Deployment
-
-Recommended for servers because all Python and Node dependencies are built inside containers.
-```bash
-#!/bin/bash
-set -e
-
-# --------------------------------------------
-# 1. 清理残留锁文件
-# --------------------------------------------
-sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/cache/apt/archives/lock
-
-# --------------------------------------------
-# 2. 更新并安装必要依赖
-# --------------------------------------------
-sudo apt update
-sudo apt install -y ca-certificates curl gnupg lsb-release
-
-# --------------------------------------------
-# 3. 配置阿里云 Docker 镜像源（避免官方源被墙）
-# --------------------------------------------
-if [ ! -f /etc/apt/sources.list.d/docker.list ]; then
-  sudo mkdir -p /etc/apt/keyrings
-  curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-  echo \
-    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://mirrors.aliyun.com/docker-ce/linux/ubuntu \
-    $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-fi
-
-# --------------------------------------------
-# 4. 安装 Docker Engine 和 Compose 插件
-# --------------------------------------------
-sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-
-# --------------------------------------------
-# 5. 配置 Docker 镜像加速（解决 pull 超时）
-# --------------------------------------------
-sudo mkdir -p /etc/docker
-sudo tee /etc/docker/daemon.json <<-'EOF'
-{
-  "registry-mirrors": ["https://registry.cn-hangzhou.aliyuncs.com"]
-}
-EOF
-
-# --------------------------------------------
-# 6. 启动 Docker 并应用加速配置
-# --------------------------------------------
-sudo systemctl start docker
-sudo systemctl enable docker
-sudo systemctl restart docker
-
-# --------------------------------------------
-# 7. 将当前用户加入 docker 组
-# --------------------------------------------
-sudo usermod -aG docker $USER
-
-# --------------------------------------------
-# 8. 拉取项目代码并启动服务
-#    使用 newgrp 临时切换组权限，避免报 permission denied
-# --------------------------------------------
-newgrp docker << 'ENDGROUP'
-set -e
-cd "$HOME/FT-ICR-MS" 2>/dev/null || {
-  cd "$HOME"
-  git clone https://gitee.com/xinyuan-xu/FT-ICR-MS.git
-  cd FT-ICR-MS
-}
-git pull   # 确保代码最新
-chmod +x deploy/deploy.sh
-./deploy/deploy.sh
-
-echo ""
-echo "==========================================="
-echo "部署完成！Docker Compose 版本："
-docker compose version
-echo "==========================================="
-ENDGROUP
-```
-
-Default access:
-
-```text
-http://<server-ip>:8080
-```
-
-If the server uses a panel such as 1Panel or an external Nginx reverse proxy, proxy the domain to:
-
-```text
-http://127.0.0.1:8080
-```
-
 ### Non-Docker Deployment
 
 Use this when Docker is not available. The server should provide Git and Python 3.10+. If Node.js/npm is available, the frontend can be rebuilt during deployment; otherwise the committed `frontend/dist` build is served directly.
 
 ```bash
-git clone https://gitee.com/xinyuan-xu/FT-ICR-MS.git
-cd FT-ICR-MS
+#!/bin/bash
+set -e
+
+# 1. 安装 Python 虚拟环境支持（避免 ensurepip 错误）
+sudo apt update
+sudo apt install -y python3.12-venv python3-pip
+
+# 2. 克隆或更新代码仓库
+REPO_DIR="$HOME/FT-ICR-MS"
+if [ -d "$REPO_DIR" ]; then
+  echo "仓库已存在，执行 git pull 更新..."
+  cd "$REPO_DIR"
+  git pull
+else
+  echo "克隆仓库..."
+  git clone https://gitee.com/xinyuan-xu/FT-ICR-MS.git "$REPO_DIR"
+  cd "$REPO_DIR"
+fi
+
+# 3. 修复 backend/requirements.txt 中的不兼容包（适配 Python 3.12）
+BACKEND_REQ="backend/requirements.txt"
+if [ -f "$BACKEND_REQ" ]; then
+  echo "正在修复 $BACKEND_REQ 以兼容 Python 3.12..."
+
+  # 备份原文件
+  cp "$BACKEND_REQ" "$BACKEND_REQ.bak"
+
+  # 修复 numpy：将固定版本改为兼容 Python 3.12 的范围
+  sed -i 's/numpy==1.24.4/numpy>=1.26.0,<2.0.0/g' "$BACKEND_REQ"
+
+  # 修复 pandas：通常 pandas 1.5+ 支持 Python 3.12，推荐使用 2.x
+  # 如果原文件写的是 pandas==1.3.5 或类似，这里统一替换为 pandas>=2.1.0
+  sed -i 's/pandas==[0-9.]*/pandas>=2.1.0/g' "$BACKEND_REQ"
+
+  echo "✅ 已修复 numpy 和 pandas 版本约束"
+else
+  echo "⚠️ 未找到 $BACKEND_REQ，跳过修复"
+fi
+
+# 4. 赋予脚本执行权限
 chmod +x deploy/deploy-linux.sh deploy/stop-linux.sh
-PORT=8000 ./deploy/deploy-linux.sh
+
+# 5. 设置端口并运行部署脚本
+export PORT=8000
+./deploy/deploy-linux.sh
+
+echo "==========================================="
+echo "部署完成！服务运行在端口 $PORT"
+echo "==========================================="
 ```
 
 Default access:
