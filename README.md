@@ -90,39 +90,79 @@ The repository supports both Docker and non-Docker Linux deployment.
 Recommended for servers because all Python and Node dependencies are built inside containers.
 ```bash
 #!/bin/bash
-# 清理残留锁文件（如果存在）
+set -e
+
+# --------------------------------------------
+# 1. 清理残留锁文件
+# --------------------------------------------
 sudo rm -f /var/lib/dpkg/lock-frontend /var/lib/dpkg/lock /var/cache/apt/archives/lock
 
-# 安装依赖
+# --------------------------------------------
+# 2. 更新并安装必要依赖
+# --------------------------------------------
 sudo apt update
 sudo apt install -y ca-certificates curl gnupg lsb-release
 
-# 添加阿里云 Docker 镜像源
-sudo mkdir -p /etc/apt/keyrings
-curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+# --------------------------------------------
+# 3. 配置阿里云 Docker 镜像源（避免官方源被墙）
+# --------------------------------------------
+if [ ! -f /etc/apt/sources.list.d/docker.list ]; then
+  sudo mkdir -p /etc/apt/keyrings
+  curl -fsSL https://mirrors.aliyun.com/docker-ce/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://mirrors.aliyun.com/docker-ce/linux/ubuntu \
+    $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+fi
 
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://mirrors.aliyun.com/docker-ce/linux/ubuntu \
-  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-# 安装 Docker 和 Compose 插件
+# --------------------------------------------
+# 4. 安装 Docker Engine 和 Compose 插件
+# --------------------------------------------
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
-# 启动 Docker 并设置开机自启
+# --------------------------------------------
+# 5. 配置 Docker 镜像加速（解决 pull 超时）
+# --------------------------------------------
+sudo mkdir -p /etc/docker
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": ["https://registry.cn-hangzhou.aliyuncs.com"]
+}
+EOF
+
+# --------------------------------------------
+# 6. 启动 Docker 并应用加速配置
+# --------------------------------------------
 sudo systemctl start docker
 sudo systemctl enable docker
+sudo systemctl restart docker
 
-# 验证
-docker compose version
-```
-```bash
-git clone https://gitee.com/xinyuan-xu/FT-ICR-MS.git
+# --------------------------------------------
+# 7. 将当前用户加入 docker 组
+# --------------------------------------------
 sudo usermod -aG docker $USER
-newgrp docker
-cd FT-ICR-MS
+
+# --------------------------------------------
+# 8. 拉取项目代码并启动服务
+#    使用 newgrp 临时切换组权限，避免报 permission denied
+# --------------------------------------------
+newgrp docker << 'ENDGROUP'
+set -e
+cd "$HOME/FT-ICR-MS" 2>/dev/null || {
+  cd "$HOME"
+  git clone https://gitee.com/xinyuan-xu/FT-ICR-MS.git
+  cd FT-ICR-MS
+}
+git pull   # 确保代码最新
 chmod +x deploy/deploy.sh
 ./deploy/deploy.sh
+
+echo ""
+echo "==========================================="
+echo "部署完成！Docker Compose 版本："
+docker compose version
+echo "==========================================="
+ENDGROUP
 ```
 
 Default access:
