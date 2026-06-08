@@ -118,6 +118,8 @@ docker compose version
 ```
 ```bash
 git clone https://gitee.com/xinyuan-xu/FT-ICR-MS.git
+sudo usermod -aG docker $USER
+newgrp docker
 cd FT-ICR-MS
 chmod +x deploy/deploy.sh
 ./deploy/deploy.sh
