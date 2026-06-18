@@ -45,51 +45,48 @@ Use this when Docker is not available. The server should provide Git and Python 
 #!/bin/bash
 set -e
 
-# 1. 安装 Python 虚拟环境支持（避免 ensurepip 错误）
 sudo apt update
 sudo apt install -y python3.12-venv python3-pip
 
-# 2. 克隆或更新代码仓库
 REPO_DIR="$HOME/FT-ICR-MS"
 if [ -d "$REPO_DIR" ]; then
-  echo "仓库已存在，执行 git pull 更新..."
+  echo "git pull..."
   cd "$REPO_DIR"
   git pull
 else
-  echo "克隆仓库..."
+  echo "..."
   git clone https://gitee.com/xinyuan-xu/FT-ICR-MS.git "$REPO_DIR"
   cd "$REPO_DIR"
 fi
 
-# 3. 修复 backend/requirements.txt 中的不兼容包（适配 Python 3.12）
+
 BACKEND_REQ="backend/requirements.txt"
 if [ -f "$BACKEND_REQ" ]; then
-  echo "正在修复 $BACKEND_REQ 以兼容 Python 3.12..."
+  echo " $BACKEND_REQ  Python 3.12..."
 
-  # 备份原文件
+
   cp "$BACKEND_REQ" "$BACKEND_REQ.bak"
 
-  # 修复 numpy：将固定版本改为兼容 Python 3.12 的范围
+  
   sed -i 's/numpy==1.24.4/numpy>=1.26.0,<2.0.0/g' "$BACKEND_REQ"
 
-  # 修复 pandas：通常 pandas 1.5+ 支持 Python 3.12，推荐使用 2.x
-  # 如果原文件写的是 pandas==1.3.5 或类似，这里统一替换为 pandas>=2.1.0
+
   sed -i 's/pandas==[0-9.]*/pandas>=2.1.0/g' "$BACKEND_REQ"
 
-  echo "✅ 已修复 numpy 和 pandas 版本约束"
+  echo "✅ numpy pandas"
 else
-  echo "⚠️ 未找到 $BACKEND_REQ，跳过修复"
+  echo "⚠️  $BACKEND_REQ"
 fi
 
-# 4. 赋予脚本执行权限
+
 chmod +x deploy/deploy-linux.sh deploy/stop-linux.sh
 
-# 5. 设置端口并运行部署脚本
+
 export PORT=8000
 ./deploy/deploy-linux.sh
 
 echo "==========================================="
-echo "部署完成！服务运行在端口 $PORT"
+echo " $PORT"
 echo "==========================================="
 ```
 
