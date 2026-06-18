@@ -191,8 +191,8 @@ markdown
 
 ## 2. 致谢
 
-衷心感谢 EMSL-Computing 团队开发的 CoreMS 框架，以及 Battelle Memorial Institute 和 Pacific Northwest National Laboratory (PNNL) 对本项目的支持。特别感谢 CoreMS 核心开发者：Yuri E. Corilo、William Kew、Katherine Heal。
-We sincerely thank the EMSL-Computing team for developing the CoreMS framework, and Battelle Memorial Institute and Pacific Northwest National Laboratory (PNNL) for their support. Special thanks to CoreMS core developers: Yuri E. Corilo, William Kew, and Katherine Heal.
+衷心感谢 EMSL-Computing 团队开发的 CoreMS 框架。特别感谢 CoreMS 核心开发者：Yuri E. Corilo、William Kew、Katherine Heal。
+We sincerely thank the EMSL-Computing team for developing the CoreMS framework. Special thanks to CoreMS core developers: Yuri E. Corilo, William Kew, and Katherine Heal.
 
 ## 3. 免责声明
 
