@@ -179,29 +179,9 @@ When using this platform in academic work, report the analytical assumptions and
 The platform is intended to make molecular-level workflows reproducible, inspectable, and deployable. Scientific conclusions should be supported by appropriate experimental design, statistical reporting, and domain interpretation.
 markdown
 
-## 1. 原始 CoreMS 许可证（BSD 2-Clause）
 
-Copyright (c) Battelle Memorial Institute. 保留所有权利。
 
-在满足以下条件的前提下，允许以源代码和二进制形式（无论修改与否）进行再分发和使用：
-
-源代码的再分发必须保留上述版权声明、本条件列表和下述免责声明。
-
-二进制形式的再分发必须在文档和/或其他随附材料中复制上述版权声明、本条件列表和下述免责声明。
-
-本软件按“原样”提供，版权持有人和贡献者不提供任何明示或暗示的保证，包括但不限于对适销性和特定用途适用性的暗示保证。在任何情况下，版权持有人或贡献者均不对因使用本软件而产生的任何直接、间接、附带、特殊、惩戒性或后果性损害承担责任（包括但不限于采购替代商品或服务、使用损失、数据丢失或业务中断），即使已被告知可能发生此类损害。
-
-Copyright (c) Battelle Memorial Institute. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-
-Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-## 2. 本衍生作品的权利声明
+# 1. 本衍生作品的权利声明
 注意:使用本作品进行科研或商业活动需邮箱告知本人详细用途 严禁用于非法用途或倒卖 邮箱:xxy1218594966@gmail.com
 
 本衍生作品（FT-ICR-MS 分子智能分析平台）是基于 CoreMS (https://github.com/EMSL-Computing/CoreMS) 二次开发的软件。
@@ -209,12 +189,12 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 原始 CoreMS 代码的版权归 Battelle Memorial Institute 所有。本衍生作品的作者对其在原始代码基础上进行的修改、新增功能和独立创作的部分享有完整的著作权。
 
 
-## 3. 致谢
+## 2. 致谢
 
 衷心感谢 EMSL-Computing 团队开发的 CoreMS 框架，以及 Battelle Memorial Institute 和 Pacific Northwest National Laboratory (PNNL) 对本项目的支持。特别感谢 CoreMS 核心开发者：Yuri E. Corilo、William Kew、Katherine Heal。
 We sincerely thank the EMSL-Computing team for developing the CoreMS framework, and Battelle Memorial Institute and Pacific Northwest National Laboratory (PNNL) for their support. Special thanks to CoreMS core developers: Yuri E. Corilo, William Kew, and Katherine Heal.
 
-## 4. 免责声明
+## 3. 免责声明
 
 本软件按“原样”提供，不附任何形式的明示或暗示担保。使用本软件所产生的风险由用户自行承担。在任何情况下，版权持有人或贡献者均不对任何损害承担责任。
 
