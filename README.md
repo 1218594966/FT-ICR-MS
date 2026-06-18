@@ -205,24 +205,11 @@ Redistributions in binary form must reproduce the above copyright notice, this l
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## 2. 本衍生作品的权利声明
+注意:使用本作品进行科研或商业活动需邮箱告知本人详细用途 严禁用于非法用途或倒卖 邮箱:xxy1218594966@gmail.com
 
 本衍生作品（FT-ICR-MS 分子智能分析平台）是基于 CoreMS (https://github.com/EMSL-Computing/CoreMS) 二次开发的软件。
 
 原始 CoreMS 代码的版权归 Battelle Memorial Institute 所有。本衍生作品的作者对其在原始代码基础上进行的修改、新增功能和独立创作的部分享有完整的著作权。
-
-本衍生作品的整体以 BSD 2-Clause 许可证发布。任何使用本软件的用户必须遵守原始 BSD 2-Clause 许可证的全部条款，并保留上述原始版权声明以及本衍生作品的版权声明。
-
-衍生作品版权声明：
-Modified Work: FT-ICR-MS (Molecular Intelligent Analysis Platform)
-
-This derivative work (FT-ICR-MS Molecular Intelligent Analysis Platform) is based on CoreMS (https://github.com/EMSL-Computing/CoreMS).
-
-The copyright of the original CoreMS code belongs to Battelle Memorial Institute. The author of this derivative work holds full copyright ownership over their modifications, additions, and independently created portions based on the original code.
-
-This derivative work as a whole is released under the BSD 2-Clause License. Any user of this software must comply with all terms of the original BSD 2-Clause License and retain both the original copyright notice above and the copyright notice of this derivative work.
-
-Derivative work copyright notice:
-Modified Work: FT-ICR-MS (Molecular Intelligent Analysis Platform)
 
 
 ## 3. 致谢
